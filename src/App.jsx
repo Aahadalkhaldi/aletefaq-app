@@ -7,6 +7,7 @@ import PageNotFound from "./lib/PageNotFound";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
+import { initPushNotifications } from "@/lib/push-notifications";
 
 // Page imports
 import Splash from "./pages/Splash";
@@ -58,7 +59,14 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError, navigateToLogin } = useAuth();
+
+  // Initialize push notifications once authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      initPushNotifications();
+    }
+  }, [isAuthenticated]);
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -77,8 +85,14 @@ const AuthenticatedApp = () => {
     if (authError.type === "user_not_registered") {
       return <UserNotRegisteredError />;
     } else if (authError.type === "auth_required") {
-      navigateToLogin();
-      return null;
+      // Don't auto-redirect on splash/root - let Splash handle login flow
+      const path = window.location.pathname;
+      if (path === '/' || path === '/splash' || path === '/privacy-policy' || path === '/terms-of-service') {
+        // Fall through to render routes - Splash will handle auth
+      } else {
+        navigateToLogin();
+        return null;
+      }
     }
   }
 

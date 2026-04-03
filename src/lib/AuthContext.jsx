@@ -5,6 +5,11 @@ import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
 const AuthContext = createContext();
 
+// Detect if running inside Capacitor (native app)
+const isCapacitor = typeof window !== 'undefined' && window.Capacitor !== undefined;
+// In Capacitor, API calls need the full Base44 server URL
+const apiBaseURL = isCapacitor ? 'https://base44.app/api/apps/public' : '/api/apps/public';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,7 +30,7 @@ export const AuthProvider = ({ children }) => {
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.
       const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
+        baseURL: apiBaseURL,
         headers: {
           'X-App-Id': appParams.appId
         },

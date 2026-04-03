@@ -2,9 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Briefcase, User, ChevronLeft, Download } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+
+// Detect Capacitor environment
+const isCapacitor = typeof window !== 'undefined' && window.Capacitor !== undefined;
+const APP_ID = import.meta.env.VITE_BASE44_APP_ID || 'f8753dd9';
+const APP_BASE_URL = import.meta.env.VITE_BASE44_APP_BASE_URL || 'https://aletefaq-f8753dd9.base44.app';
 
 export default function Splash() {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoadingAuth } = useAuth();
   const [selected, setSelected] = useState(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstall, setShowInstall] = useState(false);
@@ -28,19 +35,39 @@ export default function Splash() {
   };
 
   useEffect(() => {
-    // Auto-redirect if role was previously selected
+    // Check if user has a token (authenticated)
+    const hasToken = !!localStorage.getItem("base44_access_token");
     const savedRole = localStorage.getItem("app_role");
-    if (savedRole === "lawyer") navigate("/lawyer-dashboard", { replace: true });
-    else if (savedRole === "client") navigate("/dashboard", { replace: true });
-  }, []);
+
+    if (hasToken && isAuthenticated && savedRole) {
+      // Already authenticated with a role - go to dashboard
+      if (savedRole === "lawyer") navigate("/lawyer-dashboard", { replace: true });
+      else if (savedRole === "client") navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated]);
 
   const handleEnter = (role) => {
     setSelected(role);
     localStorage.setItem("app_role", role);
-    setTimeout(() => {
-      if (role === "lawyer") navigate("/lawyer-dashboard");
-      else navigate("/dashboard");
-    }, 400);
+
+    const hasToken = !!localStorage.getItem("base44_access_token");
+
+    if (hasToken && isAuthenticated) {
+      // Already authenticated - navigate directly
+      setTimeout(() => {
+        if (role === "lawyer") navigate("/lawyer-dashboard");
+        else navigate("/dashboard");
+      }, 400);
+    } else {
+      // Not authenticated - redirect to Base44 login
+      // The from_url tells Base44 where to redirect after login
+      const redirectUrl = `${APP_BASE_URL}/splash`;
+      const loginUrl = `https://base44.app/login?from_url=${encodeURIComponent(redirectUrl)}&app_id=${APP_ID}`;
+      
+      setTimeout(() => {
+        window.location.href = loginUrl;
+      }, 400);
+    }
   };
 
   return (
