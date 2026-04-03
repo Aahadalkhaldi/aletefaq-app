@@ -25,7 +25,17 @@ workflows:
           npx @capacitor/cli sync ios
       - name: Setup iOS signing
         script: |
+          app-store-connect fetch-signing-files "qa.alittifaq.app" \
+            --type IOS_APP_STORE \
+            --create
+          keychain initialize
+          keychain add-certificates
           xcode-project use-profiles
+      - name: Set build number
+        script: |
+          cd ios/App
+          agvtool new-version -all 1
+          agvtool new-marketing-version 1.0.0
       - name: Build iOS
         script: |
           cd ios/App
@@ -35,16 +45,18 @@ workflows:
             -sdk iphoneos \
             -destination generic/platform=iOS \
             -archivePath build/App.xcarchive \
-            archive
+            archive \
+            CODE_SIGN_STYLE=Manual
       - name: Export IPA
         script: |
           cd ios/App
-          xcodebuild -exportArchive \
-            -archivePath build/App.xcarchive \
-            -exportOptionsPlist /tmp/export_options.plist \
-            -exportPath build/export
+          xcode-project build-ipa \
+            --workspace App.xcworkspace \
+            --scheme App \
+            --archive-path build/App.xcarchive
     artifacts:
-      - ios/App/build/export/*.ipa
+      - ios/App/build/ios/ipa/*.ipa
+      - ios/App/build/App.xcarchive
     publishing:
       app_store_connect:
         auth: integration
