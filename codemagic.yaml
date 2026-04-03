@@ -25,6 +25,9 @@ workflows:
           npx @capacitor/cli sync ios
       - name: Setup iOS signing
         script: |
+          app-store-connect fetch-signing-files "app.emergent.legal-counsel-qae63810fe" \
+            --type IOS_APP_STORE \
+            --create
           keychain initialize
           keychain add-certificates
           xcode-project use-profiles
