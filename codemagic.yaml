@@ -39,7 +39,7 @@ workflows:
       - name: Build iOS
         script: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace \
+          xcodebuild -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
@@ -51,7 +51,7 @@ workflows:
         script: |
           cd ios/App
           xcode-project build-ipa \
-            --workspace App.xcworkspace \
+            --project App.xcodeproj \
             --scheme App \
             --archive-path build/App.xcarchive
     artifacts:
