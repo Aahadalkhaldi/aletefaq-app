@@ -1,0 +1,16 @@
+{
+  "appId": "qa.alittifaq.app",
+  "appName": "الاتفاق",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "automatic",
+    "allowsLinkPreview": true,
+    "scrollEnabled": true,
+    "backgroundColor": "#0D2F5F",
+    "preferredContentMode": "mobile"
+  },
+  "server": {
+    "hostname": "app.alittifaq.qa",
+    "iosScheme": "https"
+  }
+}

@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 13% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 9%;
+    --primary: 216 73% 27%;
+    --primary-foreground: 0 0% 98%;
+    --primary-deep: 216 73% 21%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 220 13% 9%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 10% 45%;
+    --accent: 216 73% 27%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 20% 91%;
+    --input: 214 20% 91%;
+    --ring: 216 73% 27%;
+    --radius: 0.75rem;
+
+    /* Custom brand colors */
+    --brand-primary: #123E7C;
+    --brand-deep: #0D2F5F;
+    --brand-soft: #1E4E95;
+    --brand-gold: #C8A96B;
+    --brand-blue-tint: #EAF2FF;
+    --brand-blue-soft: #F3F7FD;
+    --brand-soft-bg: #F7F8FA;
+    --brand-border: #E7ECF3;
+    --brand-divider: #EEF2F7;
+    --brand-text: #101828;
+    --brand-text-secondary: #6B7280;
+    --brand-gray-chip: #F2F4F7;
+    --brand-warning: #FFF4E5;
+    --brand-danger: #FDECEC;
+  }
+
+  .dark {
+    --background: 220 13% 5%;
+    --foreground: 0 0% 98%;
+    --card: 220 13% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 13% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 216 73% 50%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 220 13% 14%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 220 13% 14%;
+    --muted-foreground: 215 10% 64%;
+    --accent: 216 73% 50%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 216 73% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+    direction: rtl;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  button, a, [role="tab"] {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  svg {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  [dir="ltr"] {
+    direction: ltr;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #E7ECF3;
+  border-radius: 999px;
+}
+
+/* Transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}

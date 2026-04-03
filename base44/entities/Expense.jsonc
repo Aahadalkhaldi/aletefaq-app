@@ -1,0 +1,53 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0645\u0635\u0631\u0648\u0641"
+    },
+    "amount": {
+      "type": "number",
+      "description": "\u0627\u0644\u0645\u0628\u0644\u063a (\u0631.\u0642)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "office_supplies",
+        "transportation",
+        "communication",
+        "salaries",
+        "rent",
+        "utilities",
+        "legal_fees",
+        "other"
+      ],
+      "description": "\u062a\u0635\u0646\u064a\u0641 \u0627\u0644\u0645\u0635\u0631\u0648\u0641"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0645\u0635\u0631\u0648\u0641"
+    },
+    "case_id": {
+      "type": "string",
+      "description": "\u0645\u0631\u062a\u0628\u0637 \u0628\u0642\u0636\u064a\u0629 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a)"
+    },
+    "case_title": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "\u0631\u0627\u0628\u0637 \u0627\u0644\u0625\u064a\u0635\u0627\u0644"
+    }
+  },
+  "required": [
+    "title",
+    "amount",
+    "category",
+    "date"
+  ]
+}

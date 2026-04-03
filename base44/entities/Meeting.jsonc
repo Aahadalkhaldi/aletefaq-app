@@ -1,0 +1,64 @@
+{
+  "name": "Meeting",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0627\u062c\u062a\u0645\u0627\u0639"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "case_title": {
+      "type": "string"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time": {
+      "type": "string"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "default": 60
+    },
+    "location": {
+      "type": "string",
+      "enum": [
+        "office",
+        "online",
+        "court",
+        "other"
+      ],
+      "default": "office"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "completed",
+        "cancelled"
+      ],
+      "default": "scheduled"
+    },
+    "reminder_sent": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "title",
+    "date",
+    "time"
+  ]
+}
