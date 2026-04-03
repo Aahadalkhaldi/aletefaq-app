@@ -3,6 +3,8 @@ workflows:
     name: iOS Release
     max_build_duration: 60
     instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Codemagic
     environment:
       ios_signing:
         distribution_type: app_store
@@ -43,3 +45,8 @@ workflows:
             -exportPath build/export
     artifacts:
       - ios/App/build/export/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
