@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "@/lib/query-client";
@@ -58,8 +58,12 @@ import CaseTracking from "./pages/CaseTracking";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 
+// Pages that don't require auth
+const PUBLIC_PATHS = ['/', '/splash', '/privacy-policy', '/terms-of-service'];
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError, navigateToLogin } = useAuth();
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
 
   // Initialize push notifications once authenticated
   useEffect(() => {
@@ -68,7 +72,17 @@ const AuthenticatedApp = () => {
     }
   }, [isAuthenticated]);
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  // Safety timeout - never show loading for more than 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoadingTimedOut(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLoading = (isLoadingPublicSettings || isLoadingAuth) && !loadingTimedOut;
+
+  if (isLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-3">
@@ -85,14 +99,18 @@ const AuthenticatedApp = () => {
     if (authError.type === "user_not_registered") {
       return <UserNotRegisteredError />;
     } else if (authError.type === "auth_required") {
-      // Don't auto-redirect on splash/root - let Splash handle login flow
+      // Don't auto-redirect on public pages - let Splash handle login flow
       const path = window.location.pathname;
-      if (path === '/' || path === '/splash' || path === '/privacy-policy' || path === '/terms-of-service') {
-        // Fall through to render routes - Splash will handle auth
-      } else {
-        navigateToLogin();
-        return null;
+      const isPublicPath = PUBLIC_PATHS.includes(path);
+      if (!isPublicPath) {
+        // For protected pages, redirect to Splash for login
+        return (
+          <Routes>
+            <Route path="*" element={<Navigate to="/splash" replace />} />
+          </Routes>
+        );
       }
+      // Fall through to render public routes
     }
   }
 
