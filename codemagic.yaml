@@ -43,10 +43,3 @@ workflows:
             -exportPath build/export
     artifacts:
       - ios/App/build/export/*.ipa
-    publishing:
-      email:
-        recipients:
-          - noreply@alittifaq.qa
-        notify:
-          success: true
-          failure: true
