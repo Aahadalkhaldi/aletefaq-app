@@ -57,9 +57,10 @@ import LawyerSendForSignature from "./components/signature/LawyerSendForSignatur
 import CaseTracking from "./pages/CaseTracking";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import Login from './pages/Login';
 
 // Pages that don't require auth
-const PUBLIC_PATHS = ['/', '/splash', '/privacy-policy', '/terms-of-service'];
+const PUBLIC_PATHS = ['/', '/splash', '/login', '/privacy-policy', '/terms-of-service'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError, navigateToLogin } = useAuth();
@@ -118,6 +119,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Splash />} />
       <Route path="/splash" element={<Splash />} />
+      <Route path="/login" element={<Login />} />
       {/* ── Client Layout ── */}
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
