@@ -10,7 +10,7 @@
     "preferredContentMode": "mobile"
   },
   "server": {
-    "hostname": "app.alittifaq.qa",
+    "url": "https://aletefaq-f8753dd9.base44.app",
     "iosScheme": "https"
   }
 }
