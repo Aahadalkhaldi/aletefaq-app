@@ -8,7 +8,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.aletefaq.app
+        bundle_identifier: app.emergent.legal-counsel-qae63810fe
       vars:
         VITE_BASE44_APP_ID: f8753dd9
         VITE_BASE44_APP_BASE_URL: https://aletefaq-f8753dd9.base44.app
@@ -25,7 +25,7 @@ workflows:
           npx @capacitor/cli sync ios
       - name: Setup iOS signing
         script: |
-          app-store-connect fetch-signing-files "com.aletefaq.app" \
+          app-store-connect fetch-signing-files "app.emergent.legal-counsel-qae63810fe" \
             --type IOS_APP_STORE \
             --create
           keychain initialize
