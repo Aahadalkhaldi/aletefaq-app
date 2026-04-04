@@ -88,16 +88,36 @@ export default function Register() {
       const userId = authData.user?.id;
       if (!userId) throw new Error("فشل إنشاء الحساب");
 
-      // 2. Upload ID photo
-      const fileExt = idPhoto.name.split(".").pop() || "jpg";
-      const filePath = `${userId}/id.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("id-photos")
-        .upload(filePath, idPhoto, { upsert: true });
-      if (uploadError) throw uploadError;
+      // Ensure session is active (auto-confirm should give us a session)
+      if (!authData.session) {
+        // Try signing in if signUp didn't return a session
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: form.email.trim(),
+          password: form.password,
+        });
+        if (signInErr) throw new Error("تم إنشاء الحساب لكن فشل تسجيل الدخول التلقائي");
+      }
 
-      const { data: urlData } = supabase.storage.from("id-photos").getPublicUrl(filePath);
-      const photoUrl = urlData?.publicUrl || filePath;
+      // 2. Upload ID photo
+      let photoUrl = null;
+      try {
+        const fileExt = idPhoto.name?.split(".").pop() || "jpg";
+        const filePath = `${userId}/id.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("id-photos")
+          .upload(filePath, idPhoto, { upsert: true });
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          // Don't block registration if photo upload fails
+          photoUrl = null;
+        } else {
+          const { data: urlData } = supabase.storage.from("id-photos").getPublicUrl(filePath);
+          photoUrl = urlData?.publicUrl || filePath;
+        }
+      } catch (uploadErr) {
+        console.error("Photo upload failed:", uploadErr);
+        photoUrl = null;
+      }
 
       // 3. Insert profile
       const { error: profileError } = await supabase.from("profiles").insert({
