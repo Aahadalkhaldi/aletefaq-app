@@ -78,63 +78,66 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      // 1. Sign up
+      // 1. Sign up — metadata goes to DB trigger which auto-creates profile
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
+        options: {
+          data: {
+            full_name: form.fullName.trim(),
+            role: role,
+            account_type: form.accountType,
+          },
+        },
       });
       if (authError) throw authError;
 
       const userId = authData.user?.id;
       if (!userId) throw new Error("فشل إنشاء الحساب");
 
-      // Ensure session is active (auto-confirm should give us a session)
-      if (!authData.session) {
-        // Try signing in if signUp didn't return a session
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email: form.email.trim(),
-          password: form.password,
-        });
-        if (signInErr) throw new Error("تم إنشاء الحساب لكن فشل تسجيل الدخول التلقائي");
-      }
-
-      // 2. Upload ID photo
-      let photoUrl = null;
-      try {
-        const fileExt = idPhoto.name?.split(".").pop() || "jpg";
-        const filePath = `${userId}/id.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("id-photos")
-          .upload(filePath, idPhoto, { upsert: true });
-        if (uploadError) {
-          console.error("Upload error:", uploadError);
-          // Don't block registration if photo upload fails
-          photoUrl = null;
-        } else {
-          const { data: urlData } = supabase.storage.from("id-photos").getPublicUrl(filePath);
-          photoUrl = urlData?.publicUrl || filePath;
-        }
-      } catch (uploadErr) {
-        console.error("Photo upload failed:", uploadErr);
-        photoUrl = null;
-      }
-
-      // 3. Insert profile
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: userId,
-        full_name: form.fullName.trim(),
+      // 2. Sign in to get active session
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
         email: form.email.trim(),
-        phone: form.phone.trim(),
-        account_type: form.accountType,
-        company_name: form.accountType === "company" ? form.companyName.trim() : null,
-        commercial_register: form.accountType === "company" ? form.commercialRegister.trim() : null,
-        role: role,
-        id_photo_url: photoUrl,
-        status: "pending",
-        registration_lat: location.lat,
-        registration_lng: location.lng,
+        password: form.password,
       });
-      if (profileError) throw profileError;
+      if (signInErr) {
+        console.error("Auto sign-in failed:", signInErr);
+        // Profile already created by trigger, user can login manually
+        navigate("/pending", { replace: true });
+        return;
+      }
+
+      // 3. Update profile with extra fields (trigger created basic profile)
+      const updates = {
+        phone: form.phone.trim(),
+        registration_lat: location?.lat || null,
+        registration_lng: location?.lng || null,
+      };
+      if (form.accountType === "company") {
+        updates.company_name = form.companyName.trim();
+        updates.commercial_register = form.commercialRegister.trim();
+      }
+
+      // Upload ID photo
+      if (idPhoto) {
+        try {
+          const fileExt = idPhoto.name?.split(".").pop() || "jpg";
+          const filePath = `${userId}/id.${fileExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from("id-photos")
+            .upload(filePath, idPhoto, { upsert: true });
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage.from("id-photos").getPublicUrl(filePath);
+            updates.id_photo_url = urlData?.publicUrl || filePath;
+          } else {
+            console.error("Upload error:", uploadError);
+          }
+        } catch (uploadErr) {
+          console.error("Photo upload failed:", uploadErr);
+        }
+      }
+
+      await supabase.from("profiles").update(updates).eq("id", userId);
 
       navigate("/pending", { replace: true });
     } catch (err) {
