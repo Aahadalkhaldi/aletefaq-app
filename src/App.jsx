@@ -58,9 +58,11 @@ import CaseTracking from "./pages/CaseTracking";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Login from './pages/Login';
+import Register from './pages/Register';
+import PendingApproval from './pages/PendingApproval';
 
 // Pages that don't require auth
-const PUBLIC_PATHS = ['/', '/splash', '/login', '/privacy-policy', '/terms-of-service'];
+const PUBLIC_PATHS = ['/', '/splash', '/login', '/register', '/pending', '/privacy-policy', '/terms-of-service'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError, navigateToLogin } = useAuth();
@@ -120,6 +122,8 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Splash />} />
       <Route path="/splash" element={<Splash />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/pending" element={<PendingApproval />} />
       {/* ── Client Layout ── */}
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
