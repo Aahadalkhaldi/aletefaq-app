@@ -23,11 +23,19 @@ export default function Register() {
   const updateForm = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
   const handlePhotoSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { setError("حجم الصورة كبير — الحد الأقصى 10 ميجابايت"); return; }
-    setIdPhoto(file);
-    setIdPhotoPreview(URL.createObjectURL(file));
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { setError("حجم الصورة كبير — الحد الأقصى 10 ميجابايت"); return; }
+      setIdPhoto(file);
+      // Use FileReader instead of URL.createObjectURL for better Capacitor compatibility
+      const reader = new FileReader();
+      reader.onload = (ev) => setIdPhotoPreview(ev.target.result);
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Photo select error:', err);
+      setError("حدث خطأ في اختيار الصورة — حاول مرة أخرى");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -216,7 +224,7 @@ export default function Register() {
         {/* ID Photo Upload */}
         <div>
           <p className="text-xs text-white/60 mb-2" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>صورة الإثبات الشخصي</p>
-          <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoSelect} className="hidden" />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
           {idPhotoPreview ? (
             <div className="relative rounded-xl overflow-hidden border" style={{ borderColor: "#C8A96B" }}>
               <img src={idPhotoPreview} alt="ID" className="w-full h-32 object-cover" />
