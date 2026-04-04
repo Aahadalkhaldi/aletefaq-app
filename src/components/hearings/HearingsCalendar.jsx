@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { Hearing } from '@/api/entities';
 
 const PRIMARY = '#123E7C';
 const TEXT = '#101828';
@@ -19,7 +19,7 @@ export default function HearingsCalendar() {
 
   const loadHearings = async () => {
     try {
-      const data = await base44.entities.Hearing.filter({ status: 'scheduled' }, 'date', 200);
+      const data = await Hearing.filter({ status: 'scheduled' }, 'date', 200);
       setHearings(data);
       setLoading(false);
     } catch (error) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, Expense, Invoice } from '@/api/entities';
 import {
   ArrowRight, Plus, FileText, DollarSign, TrendingUp,
   TrendingDown, Clock, CheckCircle, X, Loader2, Upload,
@@ -80,7 +80,7 @@ function InvoiceForm({ cases, onSave, onClose }) {
     const invoiceNum = `INV-${Date.now().toString().slice(-6)}`;
     const amt = parseFloat(form.amount) || 0;
     const vat = Math.round(amt * 0.15 * 100) / 100;
-    await base44.entities.Invoice.create({
+    await Invoice.create({
       ...form,
       invoice_number: invoiceNum,
       amount: amt,
@@ -163,7 +163,7 @@ function ExpenseForm({ cases, onSave, onClose }) {
     if (!form.title || !form.amount) return;
     setSaving(true);
     const c = cases.find(x => x.id === form.case_id);
-    await base44.entities.Expense.create({ ...form, amount: parseFloat(form.amount), case_title: c?.title || "" });
+    await Expense.create({ ...form, amount: parseFloat(form.amount), case_title: c?.title || "" });
     setSaving(false);
     onSave();
     onClose();
@@ -227,9 +227,9 @@ export default function FinanceDashboard() {
   const loadAll = async () => {
     setLoading(true);
     const [inv, exp, c] = await Promise.all([
-      base44.entities.Invoice.list("-created_date", 50).catch(() => []),
-      base44.entities.Expense.list("-date", 50).catch(() => []),
-      base44.entities.Case.filter({ status: "in_progress" }, "-updated_date", 50).catch(() => []),
+      Invoice.list("-created_date", 50).catch(() => []),
+      Expense.list("-date", 50).catch(() => []),
+      Case.filter({ status: "in_progress" }, "-updated_date", 50).catch(() => []),
     ]);
     setInvoices(inv);
     setExpenses(exp);
@@ -245,7 +245,7 @@ export default function FinanceDashboard() {
   const profit = totalPaid - totalExpenses;
 
   const handleUpdateInvoiceStatus = async (inv, status) => {
-    await base44.entities.Invoice.update(inv.id, { status, ...(status === "paid" ? { paid_date: new Date().toISOString().split("T")[0] } : {}) });
+    await Invoice.update(inv.id, { status, ...(status === "paid" ? { paid_date: new Date().toISOString().split("T")[0] } : {}) });
     loadAll();
   };
 

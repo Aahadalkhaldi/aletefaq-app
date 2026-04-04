@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { FileUp, Send, Loader2, AlertCircle, X } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { SignatureRequest } from '@/api/entities';
 
 export default function LawyerSignatureUpload({ caseId, caseTitle, clientId, clientName, onSuccess }) {
   const [documentFile, setDocumentFile] = useState(null);
@@ -36,7 +36,7 @@ export default function LawyerSignatureUpload({ caseId, caseTitle, clientId, cli
       });
 
       // Create signature request
-      await base44.entities.SignatureRequest.create({
+      await SignatureRequest.create({
         case_id: caseId,
         case_title: caseTitle,
         client_id: clientId,

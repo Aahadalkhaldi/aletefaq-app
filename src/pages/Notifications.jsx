@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
 import { Bell, Calendar, CreditCard, FileText, MessageSquare, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
 import GlassIcon from "../components/ui/GlassIcon";
 

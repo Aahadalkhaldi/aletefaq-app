@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FileText, CheckCircle, Clock, Download, Eye, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { SignatureRequest } from '@/api/entities';
 
 export default function SignatureRequestList({ caseId, clientName }) {
   const [requests, setRequests] = useState([]);
@@ -10,7 +10,7 @@ export default function SignatureRequestList({ caseId, clientName }) {
 
   useEffect(() => {
     loadRequests();
-    const unsub = base44.entities.SignatureRequest.subscribe((event) => {
+    const unsub = SignatureRequest.subscribe((event) => {
       if (event.type === "update" && event.data?.case_id === caseId) {
         loadRequests();
       }
@@ -20,7 +20,7 @@ export default function SignatureRequestList({ caseId, clientName }) {
 
   const loadRequests = async () => {
     try {
-      const reqs = await base44.entities.SignatureRequest.filter({
+      const reqs = await SignatureRequest.filter({
         case_id: caseId,
         client_name: clientName,
       }, "-created_date", 50);

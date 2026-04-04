@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, FollowUp } from '@/api/entities';
 import {
   ClipboardList, Plus, Search, ChevronLeft, CheckCircle,
   Clock, AlertCircle, X, Loader2, Filter, Calendar
@@ -47,9 +47,9 @@ function FollowUpForm({ cases, onClose, onSave, initial }) {
     if (!form.case_id || !form.title || !form.deadline) return;
     setSaving(true);
     if (initial?.id) {
-      await base44.entities.FollowUp.update(initial.id, form);
+      await FollowUp.update(initial.id, form);
     } else {
-      await base44.entities.FollowUp.create(form);
+      await FollowUp.create(form);
     }
     setSaving(false);
     onSave();
@@ -144,8 +144,8 @@ export default function FollowUps() {
   const loadAll = async () => {
     setLoading(true);
     const [fu, c] = await Promise.all([
-      base44.entities.FollowUp.list("-deadline", 100).catch(() => []),
-      base44.entities.Case.list("-updated_date", 100).catch(() => []),
+      FollowUp.list("-deadline", 100).catch(() => []),
+      Case.list("-updated_date", 100).catch(() => []),
     ]);
     // تحديث المتأخرة تلقائياً
     const updated = fu.map(f => ({
@@ -158,7 +158,7 @@ export default function FollowUps() {
   };
 
   const handleComplete = async (item) => {
-    await base44.entities.FollowUp.update(item.id, {
+    await FollowUp.update(item.id, {
       status: "completed",
       completed_at: new Date().toISOString(),
     });

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, CaseTask, FollowUp, Hearing, Invoice, Meeting } from '@/api/entities';
 import {
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
   ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid
@@ -112,12 +112,12 @@ export default function OfficeAnalytics() {
     setLoading(true);
     const today = new Date().toISOString().split("T")[0];
     const [c, h, m, t, inv, f] = await Promise.all([
-      base44.entities.Case.list("-updated_date", 300).catch(() => []),
-      base44.entities.Hearing.list("-date", 300).catch(() => []),
-      base44.entities.Meeting.list("-date", 200).catch(() => []),
-      base44.entities.CaseTask.list("-created_date", 300).catch(() => []),
-      base44.entities.Invoice.list("-created_date", 200).catch(() => []),
-      base44.entities.FollowUp.list("-deadline", 200).catch(() => []),
+      Case.list("-updated_date", 300).catch(() => []),
+      Hearing.list("-date", 300).catch(() => []),
+      Meeting.list("-date", 200).catch(() => []),
+      CaseTask.list("-created_date", 300).catch(() => []),
+      Invoice.list("-created_date", 200).catch(() => []),
+      FollowUp.list("-deadline", 200).catch(() => []),
     ]);
     setCases(c);
     setHearings(h);

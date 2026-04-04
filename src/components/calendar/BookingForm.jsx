@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X, Calendar, Clock, Loader2, Building2, Video, Scale, MapPin, Bell } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { Meeting, Notification } from '@/api/entities';
 
 const locationMap = {
   office: { label: "المكتب", icon: Building2, color: "#123E7C", bg: "#EAF2FF" },
@@ -50,11 +50,11 @@ export default function BookingForm({ cases = [], initialDate = "", onSave, onCl
     if (!form.title || !form.date || !form.time) return;
     setSaving(true);
 
-    const meeting = await base44.entities.Meeting.create({ ...form, status: "scheduled" });
+    const meeting = await Meeting.create({ ...form, status: "scheduled" });
 
     // إنشاء إشعار فوري للتأكيد
     if (notifyClient && form.client_name) {
-      await base44.entities.Notification.create({
+      await Notification.create({
         user_id: form.client_name,
         title: "✅ تم تأكيد موعدك",
         body: `تم حجز موعد "${form.title}" بتاريخ ${form.date} الساعة ${form.time}`,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Case, FollowUp, Invoice } from '@/api/entities';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Download, Calendar, Loader2, TrendingUp } from "lucide-react";
 
@@ -31,9 +32,9 @@ export default function LawyerReports() {
       const endDateStr = endDate.toISOString().split("T")[0];
 
       const [allCases, allInvoices, allFollowUps] = await Promise.all([
-        base44.entities.Case.list("-updated_date", 500).catch(() => []),
-        base44.entities.Invoice.list("-created_date", 500).catch(() => []),
-        base44.entities.FollowUp.list("-created_date", 500).catch(() => []),
+        Case.list("-updated_date", 500).catch(() => []),
+        Invoice.list("-created_date", 500).catch(() => []),
+        FollowUp.list("-created_date", 500).catch(() => []),
       ]);
 
       // Filter by date range

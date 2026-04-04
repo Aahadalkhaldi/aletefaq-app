@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, Shield, MessageCircle, Clock } from "lucide-react";
 import GlassIcon from "../components/ui/GlassIcon";
-import { base44 } from "@/api/base44Client";
+import { ChatMessage, Conversation } from '@/api/entities';
 
 export default function Messages() {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ export default function Messages() {
   useEffect(() => {
     loadConversations();
     
-    const unsub = base44.entities.ChatMessage.subscribe((event) => {
+    const unsub = ChatMessage.subscribe((event) => {
       if (event.type === "create") {
         loadConversations();
       }
@@ -26,7 +26,7 @@ export default function Messages() {
 
   const loadConversations = async () => {
     try {
-      const msgs = await base44.entities.ChatMessage.list("-created_date", 500);
+      const msgs = await ChatMessage.list("-created_date", 500);
       
       // Group by conversation_id
       const grouped = {};
@@ -38,7 +38,7 @@ export default function Messages() {
       });
 
       // Get conversation details
-      const convs = await base44.entities.Conversation.list("-updated_date", 100);
+      const convs = await Conversation.list("-updated_date", 100);
       
       const enriched = convs.map(conv => {
         const conv_msgs = grouped[conv.id] || [];

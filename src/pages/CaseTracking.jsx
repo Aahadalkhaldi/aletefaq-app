@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, CaseDocument, ChatMessage } from '@/api/entities';
 import {
   ArrowRight, FileText, User, Calendar, AlertCircle,
   CheckCircle, Clock, Phone, Mail, Download, MessageSquare,
@@ -100,7 +100,7 @@ function DocumentsSection({ caseId }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.CaseDocument.filter({ case_id: caseId }, "-created_date", 50)
+    CaseDocument.filter({ case_id: caseId }, "-created_date", 50)
       .then(docs => { setDocuments(docs); setLoading(false); })
       .catch(() => setLoading(false));
   }, [caseId]);
@@ -162,7 +162,7 @@ function CaseUpdates({ caseId }) {
 
   useEffect(() => {
     // نجلب الرسائل والتحديثات المرتبطة بالقضية
-    base44.entities.ChatMessage.filter({ case_id: caseId }, "-created_date", 20)
+    ChatMessage.filter({ case_id: caseId }, "-created_date", 20)
       .then(msgs => {
         const updates = msgs
           .filter(m => m.sender_role === "lawyer" || m.message_type === "system")
@@ -225,7 +225,7 @@ export default function CaseTracking() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.Case.filter({ id }, "-created_date", 1)
+    Case.filter({ id }, "-created_date", 1)
       .then(cases => {
         if (cases.length > 0) {
           setCaseData(cases[0]);

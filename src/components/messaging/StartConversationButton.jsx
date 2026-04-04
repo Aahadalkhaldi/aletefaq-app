@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MessageSquare, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { Conversation } from '@/api/entities';
 import { useNavigate } from "react-router-dom";
 
 export default function StartConversationButton({ caseId, caseTitle, lawyerName }) {
@@ -10,7 +10,7 @@ export default function StartConversationButton({ caseId, caseTitle, lawyerName 
   const handleStartChat = async () => {
     setLoading(true);
     try {
-      const conv = await base44.entities.Conversation.create({
+      const conv = await Conversation.create({
         type: "case",
         case_id: caseId,
         title: `${caseTitle} - محادثة`,

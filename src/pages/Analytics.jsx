@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, Invoice } from '@/api/entities';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -58,8 +58,8 @@ export default function Analytics() {
 
   useEffect(() => {
     Promise.all([
-      base44.entities.Case.list("-created_date", 50).catch(() => []),
-      base44.entities.Invoice.list("-created_date", 50).catch(() => []),
+      Case.list("-created_date", 50).catch(() => []),
+      Invoice.list("-created_date", 50).catch(() => []),
     ]).then(([c, inv]) => {
       setCases(c);
       setInvoices(inv);

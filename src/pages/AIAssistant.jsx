@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
 import { Sparkles, Send, MessageCircle, Loader2, Bell, Calendar, CreditCard, AlertTriangle, ChevronLeft } from "lucide-react";
 import GlassIcon from "../components/ui/GlassIcon";
 import { useNavigate } from "react-router-dom";

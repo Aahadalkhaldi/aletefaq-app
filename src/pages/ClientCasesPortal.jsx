@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Case, ChatMessage, Conversation, Invoice } from '@/api/entities';
 import { FileText, MessageCircle, DollarSign, Scale, Clock, AlertCircle, ChevronLeft, Send, CreditCard } from "lucide-react";
 import InvoicePaymentModal from "@/components/billing/InvoicePaymentModal";
 import ClientDocumentUpload from "@/components/vault/ClientDocumentUpload";
@@ -46,17 +47,17 @@ export default function ClientCasesPortal() {
       }
 
       // Fetch cases for this client
-      const allCases = await base44.entities.Case.list("-updated_date", 100).catch(() => []);
+      const allCases = await Case.list("-updated_date", 100).catch(() => []);
       const clientCases = allCases.filter(c => c.client_name === currentUser.full_name);
       setCases(clientCases);
 
       // Fetch invoices for this client
-      const allInvoices = await base44.entities.Invoice.list("-created_date", 100).catch(() => []);
+      const allInvoices = await Invoice.list("-created_date", 100).catch(() => []);
       const clientInvoices = allInvoices.filter(i => i.client_name === currentUser.full_name);
       setInvoices(clientInvoices);
 
       // Fetch conversations for this client
-      const allConversations = await base44.entities.Conversation.list("-updated_date", 100).catch(() => []);
+      const allConversations = await Conversation.list("-updated_date", 100).catch(() => []);
       const clientConversations = allConversations.filter(c => 
         c.participant_names?.includes(currentUser.full_name)
       );
@@ -70,7 +71,7 @@ export default function ClientCasesPortal() {
 
   const loadConversationMessages = async (conversationId) => {
     try {
-      const msgs = await base44.entities.ChatMessage.filter({ conversation_id: conversationId }, "created_date", 100).catch(() => []);
+      const msgs = await ChatMessage.filter({ conversation_id: conversationId }, "created_date", 100).catch(() => []);
       setConversationMessages(msgs);
     } catch (error) {
       console.error("خطأ في تحميل الرسائل:", error);
@@ -92,7 +93,7 @@ export default function ClientCasesPortal() {
       let conversation = conversations.find(c => c.case_id === selectedCase.id);
       
       if (!conversation) {
-        const newConv = await base44.entities.Conversation.create({
+        const newConv = await Conversation.create({
           type: "case",
           case_id: selectedCase.id,
           title: selectedCase.title,
@@ -104,7 +105,7 @@ export default function ClientCasesPortal() {
       }
 
       // Create message
-      await base44.entities.ChatMessage.create({
+      await ChatMessage.create({
         conversation_id: conversation.id,
         case_id: selectedCase.id,
         sender_id: user.full_name,

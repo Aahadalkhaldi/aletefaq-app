@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, Invoice } from '@/api/entities';
 import { ArrowRight, TrendingUp, DollarSign, Calendar, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
@@ -15,8 +15,8 @@ export default function ClientReports() {
 
   useEffect(() => {
     Promise.all([
-      base44.entities.Case.list("-updated_date", 50).catch(() => []),
-      base44.entities.Invoice.list("-created_date", 50).catch(() => []),
+      Case.list("-updated_date", 50).catch(() => []),
+      Invoice.list("-created_date", 50).catch(() => []),
     ]).then(([c, inv]) => {
       setCases(c);
       setInvoices(inv);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, Party } from '@/api/entities';
 import {
   Users, Plus, Search, X, Loader2, ChevronLeft,
   Phone, CreditCard, Scale, Building2, User, Gavel
@@ -37,9 +37,9 @@ function PartyForm({ cases, onClose, onSave, initial }) {
     if (!form.full_name) return;
     setSaving(true);
     if (initial?.id) {
-      await base44.entities.Party.update(initial.id, form);
+      await Party.update(initial.id, form);
     } else {
-      await base44.entities.Party.create(form);
+      await Party.create(form);
     }
     setSaving(false);
     onSave();
@@ -260,7 +260,7 @@ function PartyDetail({ party, cases, onClose, onEdit, onDelete }) {
           )}
         </div>
 
-        <button onClick={async () => { await base44.entities.Party.delete(party.id); onDelete(); }}
+        <button onClick={async () => { await Party.delete(party.id); onDelete(); }}
           className="w-full py-3 rounded-2xl text-sm font-semibold"
           style={{ backgroundColor: "#FDECEC", color: "#B42318" }}>
           حذف هذا الطرف
@@ -285,8 +285,8 @@ export default function Parties() {
   const loadAll = async () => {
     setLoading(true);
     const [p, c] = await Promise.all([
-      base44.entities.Party.list("-created_date", 200).catch(() => []),
-      base44.entities.Case.list("-updated_date", 100).catch(() => []),
+      Party.list("-created_date", 200).catch(() => []),
+      Case.list("-updated_date", 100).catch(() => []),
     ]);
     setParties(p);
     setCases(c);

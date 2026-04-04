@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
 import { X, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 
 const PRIMARY = "#123E7C";

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, CaseDocument, Notification, SignatureRequest } from '@/api/entities';
 import {
   PenLine, Upload, X, Loader2, Plus, FileText,
   CheckCircle, Clock, AlertCircle, Eye, Download, Trash2, Send
@@ -48,7 +48,7 @@ function SendSignatureModal({ cases, onClose, onSent }) {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      await base44.entities.SignatureRequest.create({
+      await SignatureRequest.create({
         case_id: form.case_id,
         case_title: form.case_title || "",
         client_id: form.client_id || "",
@@ -60,7 +60,7 @@ function SendSignatureModal({ cases, onClose, onSent }) {
       });
 
       // إشعار للموكل
-      await base44.entities.Notification.create({
+      await Notification.create({
         user_id: form.client_id || "client",
         title: "طلب توقيع جديد",
         body: `يطلب منك توقيع مستند: ${form.document_name}`,
@@ -268,7 +268,7 @@ export default function LawyerSendForSignature() {
 
   useEffect(() => {
     loadAll();
-    const unsub = base44.entities.SignatureRequest.subscribe(e => {
+    const unsub = SignatureRequest.subscribe(e => {
       if (["create", "update", "delete"].includes(e.type)) loadAll();
     });
     return unsub;
@@ -276,8 +276,8 @@ export default function LawyerSendForSignature() {
 
   const loadAll = async () => {
     const [reqs, c] = await Promise.all([
-      base44.entities.SignatureRequest.list("-created_date", 100).catch(() => []),
-      base44.entities.Case.filter({ status: "in_progress" }, "-updated_date", 100).catch(() => []),
+      SignatureRequest.list("-created_date", 100).catch(() => []),
+      Case.filter({ status: "in_progress" }, "-updated_date", 100).catch(() => []),
     ]);
     setRequests(reqs);
     setCases(c);
@@ -286,13 +286,13 @@ export default function LawyerSendForSignature() {
 
   const handleDelete = async (id) => {
     if (!confirm("حذف طلب التوقيع؟")) return;
-    await base44.entities.SignatureRequest.delete(id);
+    await SignatureRequest.delete(id);
     loadAll();
   };
 
   const handleSaveToCase = async (req) => {
     // حفظ المستند الموقّع في ملف القضية كـ CaseDocument
-    await base44.entities.CaseDocument.create({
+    await CaseDocument.create({
       case_id: req.case_id,
       case_title: req.case_title || "",
       name: `${req.document_name} (موقّع)`,

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, CaseDocument, Client, Invoice } from '@/api/entities';
 import {
   ArrowRight, Phone, Mail, Edit2, Save, X, Loader2,
   Scale, FileText, DollarSign, AlertCircle, Check,
@@ -31,10 +31,10 @@ export default function ClientProfile() {
   const loadClientData = async () => {
     try {
       // Get client from URL or latest viewed
-      const allClients = await base44.entities.Client.list("-created_date", 100).catch(() => []);
-      const allCases = await base44.entities.Case.list("-updated_date", 200).catch(() => []);
-      const allInvoices = await base44.entities.Invoice.list("-created_date", 100).catch(() => []);
-      const allDocuments = await base44.entities.CaseDocument.list("-created_date", 100).catch(() => []);
+      const allClients = await Client.list("-created_date", 100).catch(() => []);
+      const allCases = await Case.list("-updated_date", 200).catch(() => []);
+      const allInvoices = await Invoice.list("-created_date", 100).catch(() => []);
+      const allDocuments = await CaseDocument.list("-created_date", 100).catch(() => []);
 
       // Use first client or derive from cases
       let selectedClient = allClients[0];
@@ -85,7 +85,7 @@ export default function ClientProfile() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await base44.entities.Client.update(client.id, formData);
+      await Client.update(client.id, formData);
       setClient({ ...client, ...formData });
       setEditing(false);
     } catch (error) {

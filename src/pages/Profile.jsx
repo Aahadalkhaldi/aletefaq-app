@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import GlassIcon from "../components/ui/GlassIcon";
 import { useLanguage } from "../lib/LanguageContext";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
 
 const settingsItems = [
   { key: "notifications", label: "الإشعارات", icon: Bell, desc: "إدارة التنبيهات", path: "/notification-settings" },

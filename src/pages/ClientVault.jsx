@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Lock, FolderOpen, Upload, Plus, Share2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Case, CaseDocument } from '@/api/entities';
 import DocumentCard from "@/components/vault/DocumentCard";
 import DocumentUploader from "@/components/vault/DocumentUploader";
 
@@ -35,8 +36,8 @@ export default function ClientVault() {
   const loadAll = async (u) => {
     setLoading(true);
     const [d, c] = await Promise.all([
-      base44.entities.CaseDocument.list("-created_date", 200).catch(() => []),
-      base44.entities.Case.list("-updated_date", 100).catch(() => []),
+      CaseDocument.list("-created_date", 200).catch(() => []),
+      Case.list("-updated_date", 100).catch(() => []),
     ]);
 
     // Filter: show docs uploaded by user OR shared with client (approved)

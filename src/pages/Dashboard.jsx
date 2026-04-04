@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { CaseTask, Hearing, Invoice } from '@/api/entities';
 import {
   Upload, MessageCircle, RefreshCw, Calendar,
   FileText, Bot, PenTool
@@ -34,9 +34,9 @@ export default function Dashboard() {
   const [nextHearing, setNextHearing] = useState(null);
   useEffect(() => {
     Promise.all([
-      base44.entities.CaseTask.filter({ status: "pending" }, "due_date", 5).catch(() => []),
-      base44.entities.Invoice.filter({ status: "issued" }, "-created_date", 5).catch(() => []),
-      base44.entities.Hearing.filter({ status: "scheduled" }, "date", 1).catch(() => []),
+      CaseTask.filter({ status: "pending" }, "due_date", 5).catch(() => []),
+      Invoice.filter({ status: "issued" }, "-created_date", 5).catch(() => []),
+      Hearing.filter({ status: "scheduled" }, "date", 1).catch(() => []),
     ]).then(([t, inv, h]) => {
       setTasks(t);
       setInvoices(inv);

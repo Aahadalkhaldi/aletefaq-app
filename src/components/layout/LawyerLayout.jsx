@@ -6,7 +6,8 @@ import {
   Bell, DollarSign, BarChart2, UserCircle, Shield, ClipboardList,
   RefreshCw, X, MoreHorizontal
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { HearingRequest, Notification, ServiceRequest, SignatureRequest } from '@/api/entities';
 import QuickAddSheet from "@/components/lawyer/QuickAddSheet";
 
 // التبويبات الرئيسية — القضايا والجلسات فقط + زر المزيد
@@ -39,23 +40,23 @@ export default function LawyerLayout() {
   }, []);
 
   useEffect(() => {
-    base44.entities.Notification.filter({ is_read: false }, "-created_date", 10)
+    Notification.filter({ is_read: false }, "-created_date", 10)
       .then(n => setUnread(n.length)).catch(() => {});
 
 
     Promise.all([
-      base44.entities.HearingRequest.filter({ status: "pending" }, "-created_date", 20).catch(() => []),
-      base44.entities.SignatureRequest.filter({ status: "pending" }, "-created_date", 20).catch(() => []),
+      HearingRequest.filter({ status: "pending" }, "-created_date", 20).catch(() => []),
+      SignatureRequest.filter({ status: "pending" }, "-created_date", 20).catch(() => []),
     ]).then(([hr, sig]) => setPendingCount(hr.length + sig.length));
 
-    base44.entities.ServiceRequest.filter({ status: "submitted" }, "-created_date", 50)
+    ServiceRequest.filter({ status: "submitted" }, "-created_date", 50)
       .then(r => setNewRequestsCount(r.length)).catch(() => {});
 
-    const unsubReq = base44.entities.ServiceRequest.subscribe(e => {
+    const unsubReq = ServiceRequest.subscribe(e => {
       if (e.type === "create") setNewRequestsCount(prev => prev + 1);
-      if (e.type === "update") base44.entities.ServiceRequest.filter({ status: "submitted" }, "-created_date", 50).then(r => setNewRequestsCount(r.length)).catch(() => {});
+      if (e.type === "update") ServiceRequest.filter({ status: "submitted" }, "-created_date", 50).then(r => setNewRequestsCount(r.length)).catch(() => {});
     });
-    const unsub = base44.entities.Notification.subscribe((event) => {
+    const unsub = Notification.subscribe((event) => {
       if (event.type === "create") setUnread(prev => prev + 1);
     });
     return () => { unsub(); unsubReq(); };

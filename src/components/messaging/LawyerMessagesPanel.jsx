@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MessageSquare, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { Conversation } from '@/api/entities';
 import { useNavigate } from "react-router-dom";
 
 export default function LawyerMessagesPanel({ caseId, clientId, clientName }) {
@@ -14,7 +14,7 @@ export default function LawyerMessagesPanel({ caseId, clientId, clientName }) {
 
   const loadConversations = async () => {
     try {
-      const convs = await base44.entities.Conversation.filter({
+      const convs = await Conversation.filter({
         case_id: caseId,
         type: "case",
       }, "-updated_date", 10);

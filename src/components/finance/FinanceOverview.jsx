@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, DollarSign, Check, Clock, Target } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { base44 } from '@/api/base44Client';
+import { Invoice } from '@/api/entities';
 
 const PRIMARY = '#123E7C';
 const SUCCESS = '#10B981';
@@ -22,7 +22,7 @@ export default function FinanceOverview() {
 
   const loadFinanceData = async () => {
     try {
-      const allInvoices = await base44.entities.Invoice.list('-created_date', 500);
+      const allInvoices = await Invoice.list('-created_date', 500);
       setInvoices(allInvoices);
 
       // Process monthly data

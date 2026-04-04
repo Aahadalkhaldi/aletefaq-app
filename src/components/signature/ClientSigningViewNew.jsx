@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { Notification, SignatureRequest } from '@/api/entities';
 import { ArrowRight, FileText, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import SignaturePadComponent from './SignaturePadComponent';
 
@@ -37,7 +37,7 @@ export default function ClientSigningViewNew({ request, onSigned, onBack }) {
 
       // Create signed document (in real app, merge signature with PDF)
       // For now, we'll save the signature URL as proof
-      await base44.entities.SignatureRequest.update(request.id, {
+      await SignatureRequest.update(request.id, {
         status: 'signed',
         signature_url: signatureUrl,
         signed_document_url: request.document_url, // Should be merged PDF in production
@@ -45,7 +45,7 @@ export default function ClientSigningViewNew({ request, onSigned, onBack }) {
       });
 
       // Notify lawyer
-      await base44.entities.Notification.create({
+      await Notification.create({
         user_id: 'admin', // In real app, get lawyer's ID
         title: 'تم توقيع مستند',
         body: `وقّع ${request.client_name} على المستند: ${request.document_name}`,

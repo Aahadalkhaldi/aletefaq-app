@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, Meeting, Notification } from '@/api/entities';
 import { Plus, Calendar, Bell, CheckCircle, Clock, Users, Loader2 } from "lucide-react";
 import BookingCalendar from "@/components/calendar/BookingCalendar";
 import BookingForm from "@/components/calendar/BookingForm";
@@ -25,8 +25,8 @@ export default function MeetingScheduler() {
   const loadAll = async () => {
     setLoading(true);
     const [m, c] = await Promise.all([
-      base44.entities.Meeting.list("-date", 100).catch(() => []),
-      base44.entities.Case.filter({ status: "in_progress" }, "-updated_date", 100).catch(() => []),
+      Meeting.list("-date", 100).catch(() => []),
+      Case.filter({ status: "in_progress" }, "-updated_date", 100).catch(() => []),
     ]);
     setMeetings(m);
     setCases(c);
@@ -34,15 +34,15 @@ export default function MeetingScheduler() {
   };
 
   const handleComplete = async (meeting) => {
-    await base44.entities.Meeting.update(meeting.id, { status: "completed" });
+    await Meeting.update(meeting.id, { status: "completed" });
     loadAll();
   };
 
   const handleCancel = async (meeting) => {
-    await base44.entities.Meeting.update(meeting.id, { status: "cancelled" });
+    await Meeting.update(meeting.id, { status: "cancelled" });
     // Create cancellation notification
     if (meeting.client_name) {
-      await base44.entities.Notification.create({
+      await Notification.create({
         user_id: meeting.client_name,
         title: "❌ تم إلغاء الموعد",
         body: `تم إلغاء موعد "${meeting.title}" بتاريخ ${meeting.date}`,

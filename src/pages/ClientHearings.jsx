@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Hearing } from '@/api/entities';
 import {
   CalendarDays, Scale, Clock3, CheckCircle2, AlertCircle,
   ChevronDown, ChevronUp, Loader2, XCircle, PauseCircle
@@ -119,7 +119,7 @@ export default function ClientHearings() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    base44.entities.Hearing.list("-date", 100)
+    Hearing.list("-date", 100)
       .then(d => { setHearings(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);

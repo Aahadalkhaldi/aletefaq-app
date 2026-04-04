@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case } from '@/api/entities';
 import {
   FolderOpen, Plus, Search, ChevronLeft, Scale,
   Clock, Calendar, X, Loader2, AlertCircle
@@ -35,7 +35,7 @@ function NewCaseForm({ onClose, onSave }) {
   const handleSubmit = async () => {
     if (!form.title || !form.client_name) return;
     setSaving(true);
-    await base44.entities.Case.create(form);
+    await Case.create(form);
     setSaving(false);
     onSave();
     onClose();
@@ -101,7 +101,7 @@ export default function Cases() {
 
   const loadCases = async () => {
     setLoading(true);
-    const data = await base44.entities.Case.list("-updated_date", 100);
+    const data = await Case.list("-updated_date", 100);
     setCases(data);
     setLoading(false);
   };

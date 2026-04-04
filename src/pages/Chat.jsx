@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Paperclip, Send, Shield, AlertCircle, Download, FileText, Image, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { ChatMessage, Conversation } from '@/api/entities';
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export default function Chat() {
 
   useEffect(() => {
     loadConversation();
-    const unsub = base44.entities.ChatMessage.subscribe((event) => {
+    const unsub = ChatMessage.subscribe((event) => {
       if (event.data?.conversation_id === id) {
         loadMessages();
       }
@@ -32,7 +32,7 @@ export default function Chat() {
 
   const loadConversation = async () => {
     try {
-      const conv = await base44.entities.Conversation.filter({ id }, undefined, 1);
+      const conv = await Conversation.filter({ id }, undefined, 1);
       if (conv.length > 0) {
         setConversation(conv[0]);
       }
@@ -46,7 +46,7 @@ export default function Chat() {
 
   const loadMessages = async () => {
     try {
-      const msgs = await base44.entities.ChatMessage.filter({ conversation_id: id }, "created_date", 200);
+      const msgs = await ChatMessage.filter({ conversation_id: id }, "created_date", 200);
       setMessages(msgs);
     } catch (error) {
       console.error("خطأ في تحميل الرسائل:", error);
@@ -62,7 +62,7 @@ export default function Chat() {
       const uploadResponse = await base44.integrations.Core.UploadFile({ file });
       
       // Create message with file
-      await base44.entities.ChatMessage.create({
+      await ChatMessage.create({
         conversation_id: id,
         sender_id: "client",
         sender_name: "أنت",
@@ -87,7 +87,7 @@ export default function Chat() {
     if (!text.trim()) return;
     setSending(true);
     try {
-      await base44.entities.ChatMessage.create({
+      await ChatMessage.create({
         conversation_id: id,
         sender_id: "client",
         sender_name: "أنت",

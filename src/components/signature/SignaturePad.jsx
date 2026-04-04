@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Pen, Upload, Trash2, Check, X } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
 
 export default function SignaturePad({ onSave, onCancel, existingSignatureUrl }) {
   const canvasRef = useRef(null);

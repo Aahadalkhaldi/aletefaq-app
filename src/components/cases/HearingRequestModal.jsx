@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { HearingRequest } from '@/api/entities';
 import { X, Send, Clock, HelpCircle, Loader2, CheckCircle } from "lucide-react";
 
 export default function HearingRequestModal({ hearing, caseData, onClose }) {
@@ -12,7 +12,7 @@ export default function HearingRequestModal({ hearing, caseData, onClose }) {
   const handleSubmit = async () => {
     if (!message.trim()) return;
     setLoading(true);
-    await base44.entities.HearingRequest.create({
+    await HearingRequest.create({
       hearing_id: hearing.id,
       case_id: hearing.case_id,
       case_title: hearing.case_title || caseData?.title,

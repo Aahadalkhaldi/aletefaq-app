@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Lock, Fingerprint, Trash2, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
 
 export default function SecuritySettings() {
   const navigate = useNavigate();

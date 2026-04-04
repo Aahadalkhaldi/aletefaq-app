@@ -6,7 +6,7 @@ import {
   Briefcase, WalletCards, CircleDollarSign, PenLine, ClipboardList,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, CaseTask, FollowUp, Hearing, Invoice, Notification } from '@/api/entities';
 import HearingsCalendar from "@/components/hearings/HearingsCalendar";
 
 // ─── Design tokens (matching client portal) ──────────────────────────────────
@@ -96,12 +96,12 @@ function HomeScreen() {
 
   useEffect(() => {
     Promise.all([
-      base44.entities.Case.filter({}, "-updated_date", 100).catch(() => []),
-      base44.entities.CaseTask.filter({}, "due_date", 50).catch(() => []),
-      base44.entities.Invoice.filter({}, "-created_date", 50).catch(() => []),
-      base44.entities.Notification.filter({}, "-created_date", 50).catch(() => []),
-      base44.entities.Hearing.filter({ status: "scheduled" }, "date", 30).catch(() => []),
-      base44.entities.FollowUp.filter({}, "-created_date", 50).catch(() => []),
+      Case.filter({}, "-updated_date", 100).catch(() => []),
+      CaseTask.filter({}, "due_date", 50).catch(() => []),
+      Invoice.filter({}, "-created_date", 50).catch(() => []),
+      Notification.filter({}, "-created_date", 50).catch(() => []),
+      Hearing.filter({ status: "scheduled" }, "date", 30).catch(() => []),
+      FollowUp.filter({}, "-created_date", 50).catch(() => []),
     ]).then(([allCases, allTasks, allInvoices, notifs, hearings, followups]) => {
       const activeCases = allCases.filter(c => ["in_progress", "court"].includes(c.status));
       const pendingTasks = allTasks.filter(t => t.status === "pending");

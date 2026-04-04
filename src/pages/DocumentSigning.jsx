@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FileText, CheckCircle, Clock, AlertCircle, Loader2, Download } from "lucide-react";
 import ClientSigningViewNew from "@/components/signature/ClientSigningViewNew";
-import { base44 } from "@/api/base44Client";
+import { SignatureRequest } from '@/api/entities';
 
 export default function DocumentSigning() {
   const [requests, setRequests] = useState([]);
@@ -12,7 +12,7 @@ export default function DocumentSigning() {
 
   useEffect(() => {
     loadRequests();
-    const unsub = base44.entities.SignatureRequest.subscribe((event) => {
+    const unsub = SignatureRequest.subscribe((event) => {
       if (["create", "update"].includes(event.type)) {
         loadRequests();
       }
@@ -22,7 +22,7 @@ export default function DocumentSigning() {
 
   const loadRequests = async () => {
     try {
-      const reqs = await base44.entities.SignatureRequest.list("-created_date", 100);
+      const reqs = await SignatureRequest.list("-created_date", 100);
       setRequests(reqs);
       setLoading(false);
     } catch (error) {

@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { SignatureRequest } from '@/api/entities';
 import { FileText, PenLine, Check, Trash2, Loader2, ChevronLeft, ZoomIn } from "lucide-react";
 
 export default function ClientSigningView({ request, onSigned, onBack }) {
@@ -77,7 +77,7 @@ export default function ClientSigningView({ request, onSigned, onBack }) {
     canvas.toBlob(async (blob) => {
       const file = new File([blob], "signature.png", { type: "image/png" });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.entities.SignatureRequest.update(request.id, {
+      await SignatureRequest.update(request.id, {
         signature_url: file_url,
         status: "signed",
         signed_at: new Date().toISOString(),

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { ServiceRequest } from '@/api/entities';
 import { ClipboardList, Plus, ChevronLeft, Clock, CheckCircle, AlertCircle, Building } from "lucide-react";
 import GlassIcon from "../components/ui/GlassIcon";
 import StatusChip from "../components/ui/StatusChip";
@@ -37,7 +37,7 @@ export default function ServiceRequests() {
   const loadRequests = async () => {
     setLoading(true);
     try {
-      const data = await base44.entities.ServiceRequest.list("-created_date", 30);
+      const data = await ServiceRequest.list("-created_date", 30);
       setRequests(data.length > 0 ? data : demoRequests);
     } catch {
       setRequests(demoRequests);

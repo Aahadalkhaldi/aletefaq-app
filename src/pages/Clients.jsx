@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, Client } from '@/api/entities';
 import {
   Users, Plus, Search, ChevronLeft, Phone, Mail,
   FileText, Scale, X, Loader2, User
@@ -17,7 +17,7 @@ function NewClientForm({ onClose, onSave }) {
   const handleSubmit = async () => {
     if (!form.full_name) return;
     setSaving(true);
-    await base44.entities.Client.create(form);
+    await Client.create(form);
     setSaving(false);
     onSave();
     onClose();
@@ -75,8 +75,8 @@ export default function Clients() {
   const loadAll = async () => {
     setLoading(true);
     const [cl, cs] = await Promise.all([
-      base44.entities.Client.list("-created_date", 100).catch(() => []),
-      base44.entities.Case.list("-updated_date", 200).catch(() => []),
+      Client.list("-created_date", 100).catch(() => []),
+      Case.list("-updated_date", 200).catch(() => []),
     ]);
     setClients(cl);
     setCases(cs);

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/api/base44Compat';
+import { CaseDocument, Notification } from '@/api/entities';
 import { Upload, FileText, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 const PRIMARY = '#123E7C';
@@ -71,7 +72,7 @@ export default function ClientDocumentUpload({ caseId, caseTitle, onUploadSucces
       const user = await base44.auth.me();
       const clientName = user?.full_name || 'عميل';
 
-      await base44.entities.CaseDocument.create({
+      await CaseDocument.create({
         case_id: caseId,
         case_title: caseTitle,
         name: selectedFile.name,
@@ -86,7 +87,7 @@ export default function ClientDocumentUpload({ caseId, caseTitle, onUploadSucces
 
       // Notify lawyer
       try {
-        await base44.entities.Notification.create({
+        await Notification.create({
           user_id: 'admin',
           title: 'مستند جديد من العميل',
           body: `رفع ${clientName} مستند جديد: ${selectedFile.name}`,

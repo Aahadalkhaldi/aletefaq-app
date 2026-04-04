@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, FileText, CheckSquare, DollarSign, Send, Paperclip, ChevronLeft, Loader2, CheckCircle } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Notification, ServiceRequest } from '@/api/entities';
 import { QATAR_COURTS } from "./Courts";
 
 const tabs = [
@@ -28,7 +29,7 @@ export default function CourtDetail() {
       const user = await base44.auth.me().catch(() => null);
       const reqNum = `SR-${Date.now().toString().slice(-6)}`;
 
-      await base44.entities.ServiceRequest.create({
+      await ServiceRequest.create({
         request_number: reqNum,
         court_id: court.id,
         court_name: court.name_ar,
@@ -48,7 +49,7 @@ export default function CourtDetail() {
 
       // Notify all lawyers — create notifications for each
       // We create a general notification (user_id = "all" will show to all lawyers)
-      await base44.entities.Notification.create({
+      await Notification.create({
         user_id: "all",
         title: `📋 طلب جديد: ${selectedRequest.title}`,
         body: `من ${user?.full_name || "عميل"} — ${court.name_ar} (${court.subtitle})${notes ? "\n" + notes : ""}`,

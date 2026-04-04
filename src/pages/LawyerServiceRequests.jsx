@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { ServiceRequest } from '@/api/entities';
 import { ClipboardList, Building, CheckCircle, Clock, XCircle, Loader2, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 
 const PRIORITY_CONFIG = {
@@ -37,7 +37,7 @@ function RequestCard({ req, onStatusChange }) {
 
   const handleStatus = async (newStatus) => {
     setUpdating(true);
-    await base44.entities.ServiceRequest.update(req.id, { status: newStatus });
+    await ServiceRequest.update(req.id, { status: newStatus });
     onStatusChange();
     setUpdating(false);
   };
@@ -188,7 +188,7 @@ export default function LawyerServiceRequests() {
 
   useEffect(() => {
     loadRequests();
-    const unsub = base44.entities.ServiceRequest.subscribe(e => {
+    const unsub = ServiceRequest.subscribe(e => {
       if (["create", "update"].includes(e.type)) loadRequests();
     });
     return unsub;
@@ -196,7 +196,7 @@ export default function LawyerServiceRequests() {
 
   const loadRequests = async () => {
     setLoading(true);
-    const data = await base44.entities.ServiceRequest.list("-created_date", 100).catch(() => []);
+    const data = await ServiceRequest.list("-created_date", 100).catch(() => []);
     setRequests(data);
     setLoading(false);
   };

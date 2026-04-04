@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Lock, FolderOpen, CalendarDays, Upload, Plus, X, CheckCircle, XCircle, Filter } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Case, CaseDocument } from '@/api/entities';
 import DocumentCard from "@/components/vault/DocumentCard";
 import DocumentUploader from "@/components/vault/DocumentUploader";
 
@@ -39,7 +40,7 @@ export default function Vault() {
   useEffect(() => {
     base44.auth.me().catch(() => null).then(u => setUser(u));
     loadAll();
-    const unsub = base44.entities.CaseDocument.subscribe(e => {
+    const unsub = CaseDocument.subscribe(e => {
       if (["create","update","delete"].includes(e.type)) loadAll();
     });
     return unsub;
@@ -48,8 +49,8 @@ export default function Vault() {
   const loadAll = async () => {
     setLoading(true);
     const [d, c] = await Promise.all([
-      base44.entities.CaseDocument.list("-created_date", 200).catch(() => []),
-      base44.entities.Case.list("-updated_date", 100).catch(() => []),
+      CaseDocument.list("-created_date", 200).catch(() => []),
+      Case.list("-updated_date", 100).catch(() => []),
     ]);
     setDocs(d);
     setCases(c);
@@ -58,17 +59,17 @@ export default function Vault() {
 
   const handleDelete = async (doc) => {
     if (!confirm(`حذف "${doc.name}"؟`)) return;
-    await base44.entities.CaseDocument.delete(doc.id);
+    await CaseDocument.delete(doc.id);
     loadAll();
   };
 
   const handleApprove = async (doc) => {
-    await base44.entities.CaseDocument.update(doc.id, { status: "approved" });
+    await CaseDocument.update(doc.id, { status: "approved" });
     loadAll();
   };
 
   const handleReject = async (doc) => {
-    await base44.entities.CaseDocument.update(doc.id, { status: "rejected" });
+    await CaseDocument.update(doc.id, { status: "rejected" });
     loadAll();
   };
 

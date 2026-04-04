@@ -6,7 +6,7 @@ import {
   FileText, MessageSquare, FileWarning, ClipboardList,
   UserPlus, Megaphone, Timer, Plus, PenLine
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { Notification } from '@/api/entities';
 
 const PRIMARY = "#123E7C";
 const TEXT = "#101828";
@@ -129,7 +129,7 @@ function ReminderForm({ onClose }) {
   const save = async () => {
     if (!title.trim()) return;
     setSaving(true);
-    await base44.entities.Notification.create({
+    await Notification.create({
       user_id: "general",
       title,
       body: date ? `موعد: ${date}` : "تذكير عام",
@@ -238,7 +238,7 @@ function AnnouncementForm({ onClose }) {
   const save = async () => {
     if (!title.trim()) return;
     setSaving(true);
-    await base44.entities.Notification.create({
+    await Notification.create({
       user_id: "all",
       title,
       body: body || title,

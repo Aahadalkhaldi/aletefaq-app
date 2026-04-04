@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Meeting } from '@/api/entities';
 import { Calendar, Plus, Bell, Clock, Loader2 } from "lucide-react";
 import BookingCalendar from "@/components/calendar/BookingCalendar";
 import BookingForm from "@/components/calendar/BookingForm";
@@ -27,7 +28,7 @@ export default function Appointments() {
 
   const loadMeetings = async () => {
     setLoading(true);
-    const all = await base44.entities.Meeting.list("-date", 100).catch(() => []);
+    const all = await Meeting.list("-date", 100).catch(() => []);
     setMeetings(all);
     setLoading(false);
   };

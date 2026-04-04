@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, CaseDocument, CaseTask, Hearing, Party } from '@/api/entities';
 import {
   ArrowRight, Scale, Calendar, Clock, FileText, Users,
   Plus, X, Loader2, ChevronLeft, CheckCircle, Edit2,
@@ -43,16 +43,16 @@ function TabContent({ label, caseId, caseData }) {
     setLoading(true);
     try {
       if (label === "الجلسات") {
-        const d = await base44.entities.Hearing.filter({ case_id: caseId }, "-date", 50);
+        const d = await Hearing.filter({ case_id: caseId }, "-date", 50);
         setData(d);
       } else if (label === "المهام") {
-        const d = await base44.entities.CaseTask.filter({ case_id: caseId }, "-created_date", 50);
+        const d = await CaseTask.filter({ case_id: caseId }, "-created_date", 50);
         setData(d);
       } else if (label === "المستندات") {
-        const d = await base44.entities.CaseDocument.filter({ case_id: caseId }, "-created_date", 50);
+        const d = await CaseDocument.filter({ case_id: caseId }, "-created_date", 50);
         setData(d);
       } else if (label === "الأطراف") {
-        const d = await base44.entities.Party.list("-created_date", 100);
+        const d = await Party.list("-created_date", 100);
         setData(d.filter(p => p.case_ids && p.case_ids.includes(caseId)));
       }
     } catch (e) {
@@ -66,9 +66,9 @@ function TabContent({ label, caseId, caseData }) {
     setSaving(true);
     try {
       if (label === "الجلسات") {
-        await base44.entities.Hearing.create({ ...form, case_id: caseId, case_title: caseData?.title, status: "scheduled" });
+        await Hearing.create({ ...form, case_id: caseId, case_title: caseData?.title, status: "scheduled" });
       } else if (label === "المهام") {
-        await base44.entities.CaseTask.create({ ...form, case_id: caseId, case_title: caseData?.title, status: "pending" });
+        await CaseTask.create({ ...form, case_id: caseId, case_title: caseData?.title, status: "pending" });
       }
       setShowForm(false);
       setForm({});
@@ -124,7 +124,7 @@ function TabContent({ label, caseId, caseData }) {
         <motion.div key={t.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
           className="bg-white rounded-2xl border p-4 flex items-start gap-3" style={{ borderColor: "#E7ECF3" }}>
           <button onClick={async () => {
-            await base44.entities.CaseTask.update(t.id, { status: t.status === "completed" ? "pending" : "completed" });
+            await CaseTask.update(t.id, { status: t.status === "completed" ? "pending" : "completed" });
             loadData();
           }} className="mt-0.5 flex-shrink-0">
             <CheckCircle className="w-5 h-5" style={{ color: t.status === "completed" ? "#1A6E3A" : "#D1D5DB" }} />
@@ -256,8 +256,8 @@ export default function CaseDetail() {
   useEffect(() => {
     if (activeTab === "المساعد الذكي" && id) {
       Promise.all([
-        base44.entities.Hearing.filter({ case_id: id }, "-date", 50).catch(() => []),
-        base44.entities.CaseTask.filter({ case_id: id }, "-created_date", 50).catch(() => []),
+        Hearing.filter({ case_id: id }, "-date", 50).catch(() => []),
+        CaseTask.filter({ case_id: id }, "-created_date", 50).catch(() => []),
       ]).then(([h, t]) => { setAiHearings(h); setAiTasks(t); });
     }
   }, [activeTab, id]);
@@ -265,7 +265,7 @@ export default function CaseDetail() {
   const loadCase = async () => {
     setLoading(true);
     try {
-      const cases = await base44.entities.Case.filter({ id }, "-created_date", 1);
+      const cases = await Case.filter({ id }, "-created_date", 1);
       if (cases.length > 0) {
         setCaseData(cases[0]);
         setEditForm(cases[0]);
@@ -276,7 +276,7 @@ export default function CaseDetail() {
 
   const handleSave = async () => {
     setSaving(true);
-    await base44.entities.Case.update(id, editForm);
+    await Case.update(id, editForm);
     setCaseData(editForm);
     setEditing(false);
     setSaving(false);

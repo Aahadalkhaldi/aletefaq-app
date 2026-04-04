@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CreditCard, CheckCircle, Clock, AlertCircle, Loader2, X } from "lucide-react";
 import GlassIcon from "../components/ui/GlassIcon";
 import StatusChip from "../components/ui/StatusChip";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Invoice } from '@/api/entities';
 
 const tabs = ["الكل", "قيد الاستحقاق", "مدفوعة"];
 
@@ -16,7 +17,7 @@ export default function Billing() {
   const [checkoutLoading, setCheckoutLoading] = useState(null);
 
   useEffect(() => {
-    base44.entities.Invoice.list("-created_date", 50)
+    Invoice.list("-created_date", 50)
       .then(data => { setInvoices(data); setLoading(false); })
       .catch(() => setLoading(false));
 

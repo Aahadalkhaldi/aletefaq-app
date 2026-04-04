@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { Case, Hearing } from '@/api/entities';
 import {
   Calendar, Plus, Search, ChevronLeft, Scale,
   Clock, CheckCircle, X, Loader2, AlertCircle, MapPin
@@ -34,7 +34,7 @@ function NewHearingForm({ cases, onClose, onSave }) {
   const handleSubmit = async () => {
     if (!form.case_id || !form.date || !form.court_name) return;
     setSaving(true);
-    await base44.entities.Hearing.create({ ...form, status: "scheduled" });
+    await Hearing.create({ ...form, status: "scheduled" });
     setSaving(false);
     onSave();
     onClose();
@@ -99,8 +99,8 @@ export default function Hearings() {
   const loadAll = async () => {
     setLoading(true);
     const [h, c] = await Promise.all([
-      base44.entities.Hearing.list("date", 100).catch(() => []),
-      base44.entities.Case.filter({ status: "in_progress" }, "-updated_date", 100).catch(() => []),
+      Hearing.list("date", 100).catch(() => []),
+      Case.filter({ status: "in_progress" }, "-updated_date", 100).catch(() => []),
     ]);
     setHearings(h);
     setCases(c);

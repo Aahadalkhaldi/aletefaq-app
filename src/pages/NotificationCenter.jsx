@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Notification } from '@/api/entities';
 import { Bell, Sliders, Trash2, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 const PRIMARY = "#123E7C";
@@ -26,7 +27,7 @@ export default function NotificationCenter() {
 
   useEffect(() => {
     loadData();
-    const unsub = base44.entities.Notification.subscribe((event) => {
+    const unsub = Notification.subscribe((event) => {
       if (event.type === "create") {
         loadNotifications();
       }
@@ -37,7 +38,7 @@ export default function NotificationCenter() {
   const loadData = async () => {
     try {
       const [notifs, user] = await Promise.all([
-        base44.entities.Notification.list("-created_date", 50).catch(() => []),
+        Notification.list("-created_date", 50).catch(() => []),
         base44.auth.me().catch(() => null),
       ]);
       setNotifications(notifs);
@@ -53,7 +54,7 @@ export default function NotificationCenter() {
   };
 
   const loadNotifications = async () => {
-    const notifs = await base44.entities.Notification.list("-created_date", 50).catch(() => []);
+    const notifs = await Notification.list("-created_date", 50).catch(() => []);
     setNotifications(notifs);
   };
 
@@ -72,12 +73,12 @@ export default function NotificationCenter() {
   };
 
   const markAsRead = async (id) => {
-    await base44.entities.Notification.update(id, { is_read: true }).catch(() => {});
+    await Notification.update(id, { is_read: true }).catch(() => {});
     await loadNotifications();
   };
 
   const deleteNotification = async (id) => {
-    await base44.entities.Notification.delete(id).catch(() => {});
+    await Notification.delete(id).catch(() => {});
     await loadNotifications();
   };
 

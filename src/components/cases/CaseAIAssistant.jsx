@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
 import { Sparkles, Send, Loader2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ListChecks } from "lucide-react";
 
 const PRIMARY = "#123E7C";

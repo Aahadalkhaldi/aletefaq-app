@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FileText, X, Loader2, CheckCircle, AlertCircle, Lock, Share2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { CaseDocument, Notification } from '@/api/entities';
 
 const PRIMARY = "#123E7C";
 const TEXT = "#101828";
@@ -52,7 +52,7 @@ export default function DocumentUploader({ caseId, caseTitle, cases = [], upload
       const ext = file.name.split(".").pop().toLowerCase();
       const fileType = ["jpg","jpeg","png","gif","webp"].includes(ext) ? "image" : ext === "pdf" ? "pdf" : ext === "docx" || ext === "doc" ? "docx" : ext;
 
-      await base44.entities.CaseDocument.create({
+      await CaseDocument.create({
         case_id: selectedCaseId,
         case_title: selectedCaseTitle,
         name: file.name,
@@ -75,7 +75,7 @@ export default function DocumentUploader({ caseId, caseTitle, cases = [], upload
         ? `تم رفع "${file.name}" في ${selectedCaseTitle || "القضية"}`
         : `رفع ${uploadedBy} مستنداً جديداً: "${file.name}"`;
 
-      await base44.entities.Notification.create({
+      await Notification.create({
         user_id: isLawyer && sharedWithClient ? (selectedCaseTitle || "client") : "admin",
         title: notifTitle,
         body: notifBody,

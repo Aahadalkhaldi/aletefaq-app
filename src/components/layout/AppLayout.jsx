@@ -3,7 +3,7 @@ import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, MessageSquare, User, Scale, FileText, Bell, BarChart2, Landmark, MoreHorizontal, X, ChevronLeft, CalendarDays } from "lucide-react";
 import LegalAssistantBubble from "@/components/chat/LegalAssistantBubble";
-import { base44 } from "@/api/base44Client";
+import { Notification } from '@/api/entities';
 
 const tabs = [
   { path: "/dashboard", label: "الرئيسية", icon: Home },
@@ -31,11 +31,11 @@ export default function AppLayout() {
   const isExtraActive = extraTabs.some(t => location.pathname === t.path);
 
   useEffect(() => {
-    base44.entities.Notification.filter({ is_read: false }, "-created_date", 10)
+    Notification.filter({ is_read: false }, "-created_date", 10)
       .then(n => setUnread(n.length))
       .catch(() => {});
 
-    const unsub = base44.entities.Notification.subscribe((event) => {
+    const unsub = Notification.subscribe((event) => {
       if (event.type === "create") setUnread(prev => prev + 1);
     });
     return unsub;

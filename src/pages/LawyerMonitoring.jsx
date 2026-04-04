@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/base44Compat";
+import { Case, CaseTask, FollowUp, Hearing, Invoice } from '@/api/entities';
 import {
   BarChart2, Scale, CheckCircle2, Clock3, AlertCircle,
   TrendingUp, Users, CalendarDays, Receipt, RefreshCw,
@@ -178,11 +179,11 @@ export default function LawyerMonitoring() {
   const loadData = () => {
     setLoading(true);
     Promise.all([
-      base44.entities.Case.list("-updated_date", 200).catch(() => []),
-      base44.entities.Hearing.filter({ status: "scheduled" }, "date", 100).catch(() => []),
-      base44.entities.CaseTask.filter({ status: "pending" }, "due_date", 100).catch(() => []),
-      base44.entities.FollowUp.list("deadline", 100).catch(() => []),
-      base44.entities.Invoice.list("-created_date", 100).catch(() => []),
+      Case.list("-updated_date", 200).catch(() => []),
+      Hearing.filter({ status: "scheduled" }, "date", 100).catch(() => []),
+      CaseTask.filter({ status: "pending" }, "due_date", 100).catch(() => []),
+      FollowUp.list("deadline", 100).catch(() => []),
+      Invoice.list("-created_date", 100).catch(() => []),
     ]).then(([c, h, t, f, inv]) => {
       setCases(c);
       setHearings(h);
