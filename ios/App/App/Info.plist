@@ -49,5 +49,11 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يحتاج التطبيق تحديد موقعك للتحقق من هويتك عند التسجيل</string>
+	<key>NSCameraUsageDescription</key>
+	<string>يحتاج التطبيق الكاميرا لتصوير صورة الإثبات الشخصي</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج التطبيق الوصول للصور لرفع صورة الإثبات الشخصي</string>
 </dict>
 </plist>

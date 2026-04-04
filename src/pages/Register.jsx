@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, User, Phone, Building2, FileText, Camera, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Phone, Building2, FileText, Camera, ArrowRight, AlertCircle, CheckCircle2, MapPin, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function Register() {
@@ -17,6 +17,30 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [location, setLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState("");
+
+  // Request location on mount
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError("المتصفح لا يدعم تحديد الموقع");
+      setLocationLoading(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocationLoading(false);
+      },
+      (err) => {
+        console.error('Location error:', err);
+        setLocationError("يجب السماح بتحديد الموقع للتسجيل");
+        setLocationLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  }, []);
 
   const role = localStorage.getItem("app_role") || "client";
 
@@ -49,6 +73,7 @@ export default function Register() {
     if (form.password !== form.confirmPassword) { setError("كلمة المرور غير متطابقة"); return; }
     if (form.accountType === "company" && !form.companyName.trim()) { setError("الرجاء إدخال اسم الشركة"); return; }
     if (!idPhoto) { setError("الرجاء رفع صورة الإثبات الشخصي"); return; }
+    if (!location) { setError("يجب السماح بتحديد الموقع للتسجيل"); return; }
     if (!form.agreeTerms) { setError("الرجاء الموافقة على الشروط والأحكام"); return; }
 
     setIsLoading(true);
@@ -86,6 +111,8 @@ export default function Register() {
         role: role,
         id_photo_url: photoUrl,
         status: "pending",
+        registration_lat: location.lat,
+        registration_lng: location.lng,
       });
       if (profileError) throw profileError;
 
@@ -244,6 +271,20 @@ export default function Register() {
         </div>
 
         {/* Terms */}
+        {/* Location Status */}
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ backgroundColor: location ? "rgba(34,197,94,0.15)" : locationError ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${location ? "rgba(34,197,94,0.3)" : locationError ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+          {locationLoading ? (
+            <><Loader2 className="w-4 h-4 animate-spin" style={{ color: "#C8A96B" }} /><span className="text-xs" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>جاري تحديد الموقع...</span></>
+          ) : location ? (
+            <><MapPin className="w-4 h-4" style={{ color: "#22c55e" }} /><span className="text-xs" style={{ color: "#22c55e", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>تم تحديد الموقع بنجاح</span></>
+          ) : (
+            <><AlertCircle className="w-4 h-4" style={{ color: "#ef4444" }} /><span className="text-xs" style={{ color: "#ef4444", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>{locationError || "يجب السماح بتحديد الموقع"}</span>
+              <button type="button" onClick={() => { setLocationLoading(true); setLocationError(''); navigator.geolocation.getCurrentPosition((p) => { setLocation({lat:p.coords.latitude,lng:p.coords.longitude}); setLocationLoading(false); }, () => { setLocationError("فشل تحديد الموقع"); setLocationLoading(false); }, {enableHighAccuracy:true,timeout:15000}); }}
+                className="text-xs underline mr-auto" style={{ color: "#C8A96B" }}>إعادة المحاولة</button></>
+          )}
+        </div>
+
+
         <label className="flex items-start gap-2 cursor-pointer">
           <input type="checkbox" checked={form.agreeTerms} onChange={(e) => updateForm("agreeTerms", e.target.checked)}
             className="mt-1 w-4 h-4 rounded accent-amber-500" />
