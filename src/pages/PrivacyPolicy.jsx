@@ -1,6 +1,13 @@
+import { ArrowRight } from "lucide-react";
+
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-white p-6 max-w-4xl mx-auto" dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+      <button onClick={() => window.history.back()}
+        className="fixed top-4 right-4 z-50 w-10 h-10 rounded-full flex items-center justify-center shadow-lg"
+        style={{ backgroundColor: "#0D2F5F" }}>
+        <ArrowRight className="w-5 h-5 text-white" />
+      </button>
       <div className="py-12">
         <h1 className="text-3xl font-bold mb-8" style={{ color: "#123E7C" }}>سياسة الخصوصية</h1>
         
