@@ -8,9 +8,5 @@
     "scrollEnabled": true,
     "backgroundColor": "#0D2F5F",
     "preferredContentMode": "mobile"
-  },
-  "server": {
-    "url": "https://aletefaq-f8753dd9.base44.app",
-    "iosScheme": "https"
   }
 }
