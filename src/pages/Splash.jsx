@@ -1,8 +1,3 @@
-ممتاز.
-
-الآن الملف الثاني، الصق هذا **كله كامل** داخل `src/pages/Splash.jsx` بعد حذف المحتوى القديم:
-
-```jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -154,7 +149,3 @@ export default function Splash() {
     </div>
   );
 }
-```
-
-بعدها سو **Commit changes** وقل لي فقط:
-**تم Splash.jsx**
