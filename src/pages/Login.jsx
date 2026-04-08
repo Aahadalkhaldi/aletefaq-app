@@ -1,3 +1,6 @@
+الصق هذا **كله كامل** داخل `src/pages/Login.jsx` بعد حذف المحتوى القديم:
+
+```jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -31,7 +34,6 @@ export default function Login() {
       });
       if (authError) throw authError;
 
-      // Check profile status
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("status, role")
@@ -45,6 +47,7 @@ export default function Login() {
       }
 
       if (profile.status === "pending") {
+        localStorage.setItem("app_role", profile.role || role);
         navigate("/pending", { replace: true });
         return;
       }
@@ -52,18 +55,18 @@ export default function Login() {
       if (profile.status === "rejected") {
         setError("تم رفض حسابك — تواصل مع الإدارة للمزيد");
         await supabase.auth.signOut();
+        localStorage.removeItem("app_role");
         return;
       }
 
-      // Approved — save role and navigate
-      localStorage.setItem("app_role", profile.role || role);
+      const resolvedRole = profile.role || role;
+      localStorage.setItem("app_role", resolvedRole);
 
-      if (profile.role === "lawyer" || role === "lawyer") {
+      if (resolvedRole === "lawyer") {
         navigate("/lawyer-dashboard", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
       }
-      window.location.reload();
     } catch (err) {
       console.error("Login error:", err);
       if (err.message?.includes("Invalid login")) {
@@ -82,7 +85,6 @@ export default function Login() {
     <div className="min-h-screen flex flex-col items-center justify-center px-6" dir="rtl"
       style={{ background: "linear-gradient(160deg, #0D2F5F 0%, #123E7C 40%, #1E4E95 70%, #2A5FA8 100%)" }}>
 
-      {/* Back */}
       <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         onClick={() => { localStorage.removeItem("app_role"); navigate("/splash"); }}
         className="absolute top-14 right-6 w-10 h-10 rounded-full flex items-center justify-center"
@@ -90,7 +92,6 @@ export default function Login() {
         <ArrowRight className="w-5 h-5 text-white" />
       </motion.button>
 
-      {/* Logo */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
         className="flex flex-col items-center gap-3 mb-8">
         <img src="https://media.base44.com/images/public/69c61dda06ecec47f8753dd9/38e3c9f1b_WhatsAppImage2026-03-31at90804AM.png"
@@ -103,7 +104,6 @@ export default function Login() {
         </div>
       </motion.div>
 
-      {/* Login Card */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
         className="w-full max-w-sm rounded-3xl p-6 border"
         style={{ background: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
@@ -157,7 +157,6 @@ export default function Login() {
           </motion.button>
         </form>
 
-        {/* Register link */}
         <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
           ما عندك حساب؟{" "}
           <button onClick={() => navigate("/register")} className="underline" style={{ color: "#C8A96B" }}>
@@ -166,7 +165,6 @@ export default function Login() {
         </p>
       </motion.div>
 
-      {/* Footer */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-8 text-center">
         <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>آمنة • دقيقة • سرية</p>
         <div className="flex items-center justify-center gap-3 text-xs mt-2 flex-wrap">
@@ -178,3 +176,7 @@ export default function Login() {
     </div>
   );
 }
+```
+
+بعد ما تلصقه وتسوي **Commit changes**، اكتب لي فقط:
+**تم Login.jsx**
