@@ -1,3 +1,8 @@
+ممتاز.
+
+الآن الملف الثاني، الصق هذا **كله كامل** داخل `src/pages/Splash.jsx` بعد حذف المحتوى القديم:
+
+```jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -10,14 +15,13 @@ export default function Splash() {
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    const hasToken = !!localStorage.getItem("base44_access_token");
     const savedRole = localStorage.getItem("app_role");
 
-    if (hasToken && isAuthenticated && savedRole) {
+    if (isAuthenticated && savedRole) {
       if (savedRole === "lawyer") navigate("/lawyer-dashboard", { replace: true });
       else if (savedRole === "client") navigate("/dashboard", { replace: true });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   const handleEnter = (role) => {
     setSelected(role);
@@ -150,3 +154,7 @@ export default function Splash() {
     </div>
   );
 }
+```
+
+بعدها سو **Commit changes** وقل لي فقط:
+**تم Splash.jsx**
