@@ -1,6 +1,3 @@
-الصق هذا **كله كامل** داخل `src/pages/Login.jsx` بعد حذف المحتوى القديم:
-
-```jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -176,7 +173,4 @@ export default function Login() {
     </div>
   );
 }
-```
-
-بعد ما تلصقه وتسوي **Commit changes**، اكتب لي فقط:
 **تم Login.jsx**
