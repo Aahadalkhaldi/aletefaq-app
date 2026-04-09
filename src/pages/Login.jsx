@@ -12,7 +12,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const role = localStorage.getItem("app_role") || "client";
+  const savedRole = localStorage.getItem("app_role") || "client";
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,37 +26,40 @@ export default function Login() {
     setIsLoading(true);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: normalizedEmail,
         password,
       });
 
       if (authError) throw authError;
 
       const userId = data?.user?.id;
-      const userEmail = data?.user?.email?.trim().toLowerCase();
-
       if (!userId) {
         setError("تعذر التحقق من بيانات المستخدم");
         await supabase.auth.signOut();
         return;
       }
 
-      let { data: profile, error: profileError } = await supabase
+      const byId = await supabase
         .from("profiles")
-        .select("id, email, status, role, account_type, full_name")
+        .select("id, email, full_name, role, status, account_type")
         .eq("id", userId)
         .maybeSingle();
 
-      if ((!profile || profileError) && userEmail) {
-        const fallback = await supabase
+      let profile = byId.data;
+      let profileError = byId.error;
+
+      if (!profile) {
+        const byEmail = await supabase
           .from("profiles")
-          .select("id, email, status, role, account_type, full_name")
-          .ilike("email", userEmail)
+          .select("id, email, full_name, role, status, account_type")
+          .ilike("email", normalizedEmail)
           .maybeSingle();
 
-        profile = fallback.data;
-        profileError = fallback.error;
+        profile = byEmail.data;
+        profileError = byEmail.error;
       }
 
       if (profileError) {
@@ -64,34 +67,14 @@ export default function Login() {
       }
 
       if (!profile) {
-        const insertPayload = {
-          id: userId,
-          email: userEmail,
-          full_name: data.user.user_metadata?.full_name || "User",
-          role: userEmail === "admin@aaljassim.com" ? "admin" : role,
-          status: "approved",
-          account_type: userEmail === "admin@aaljassim.com" ? "lawyer" : "client",
-        };
-
-        const created = await supabase
-          .from("profiles")
-          .upsert(insertPayload, { onConflict: "id" })
-          .select("id, email, status, role, account_type, full_name")
-          .single();
-
-        if (created.error || !created.data) {
-          console.error("Profile create error:", created.error);
-          setError("لم يتم العثور على الحساب - تواصل مع الإدارة");
-          await supabase.auth.signOut();
-          return;
-        }
-
-        profile = created.data;
+        setError("لم يتم العثور على الحساب - تواصل مع الإدارة");
+        await supabase.auth.signOut();
+        return;
       }
 
       const resolvedRole =
         profile.role ||
-        (profile.account_type === "lawyer" ? "lawyer" : profile.account_type === "admin" ? "admin" : role);
+        (profile.account_type === "lawyer" ? "lawyer" : profile.account_type === "admin" ? "admin" : savedRole);
 
       const resolvedStatus = profile.status || "approved";
 
@@ -110,7 +93,7 @@ export default function Login() {
 
       localStorage.setItem("app_role", resolvedRole);
 
-      if (resolvedRole === "lawyer" || resolvedRole === "admin") {
+      if (resolvedRole === "admin" || resolvedRole === "lawyer") {
         navigate("/lawyer-dashboard", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
@@ -169,7 +152,7 @@ export default function Login() {
             الاتفاق
           </p>
           <p className="text-xs mt-0.5" style={{ color: "#C8A96B" }}>
-            {role === "lawyer" || role === "admin" ? "بوابة الإدارة والمحامي" : "بوابة العميل"}
+            {savedRole === "admin" || savedRole === "lawyer" ? "بوابة الإدارة والمحامي" : "بوابة العميل"}
           </p>
         </div>
       </motion.div>
