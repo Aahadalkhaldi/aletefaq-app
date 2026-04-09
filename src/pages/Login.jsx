@@ -12,7 +12,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const savedRole = localStorage.getItem("app_role") || "client";
+  const selectedPortal = localStorage.getItem("app_role") || "client";
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -35,46 +35,40 @@ export default function Login() {
 
       if (authError) throw authError;
 
-      const userId = data?.user?.id;
-      if (!userId) {
+      const user = data?.user;
+      if (!user?.id) {
         setError("تعذر التحقق من بيانات المستخدم");
         await supabase.auth.signOut();
         return;
       }
 
-      const byId = await supabase
+      const byIdResult = await supabase
         .from("profiles")
-        .select("id, email, full_name, role, status, account_type")
-        .eq("id", userId)
+        .select("*")
+        .eq("id", user.id)
         .maybeSingle();
 
-      let profile = byId.data;
-      let profileError = byId.error;
+      let profile = byIdResult.data;
 
       if (!profile) {
-        const byEmail = await supabase
+        const byEmailResult = await supabase
           .from("profiles")
-          .select("id, email, full_name, role, status, account_type")
+          .select("*")
           .ilike("email", normalizedEmail)
           .maybeSingle();
 
-        profile = byEmail.data;
-        profileError = byEmail.error;
-      }
-
-      if (profileError) {
-        console.error("Profile fetch error:", profileError);
+        profile = byEmailResult.data;
       }
 
       if (!profile) {
-        setError("لم يتم العثور على الحساب - تواصل مع الإدارة");
+        setError("لم يتم العثور على الحساب");
         await supabase.auth.signOut();
         return;
       }
 
       const resolvedRole =
         profile.role ||
-        (profile.account_type === "lawyer" ? "lawyer" : profile.account_type === "admin" ? "admin" : savedRole);
+        (profile.account_type === "admin" ? "admin" : profile.account_type === "lawyer" ? "lawyer" : "client");
 
       const resolvedStatus = profile.status || "approved";
 
@@ -85,7 +79,7 @@ export default function Login() {
       }
 
       if (resolvedStatus === "rejected") {
-        setError("تم رفض حسابك - تواصل مع الإدارة للمزيد");
+        setError("تم رفض حسابك - تواصل مع الإدارة");
         await supabase.auth.signOut();
         localStorage.removeItem("app_role");
         return;
@@ -102,9 +96,9 @@ export default function Login() {
       console.error("Login error:", err);
 
       if (err.message?.includes("Invalid login")) {
-        setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+        setError("كلمة المرور أو البريد الإلكتروني غير صحيح");
       } else if (err.message?.includes("Email not confirmed")) {
-        setError("الرجاء تأكيد بريدك الإلكتروني أولاً");
+        setError("الرجاء تأكيد البريد الإلكتروني أولاً");
       } else {
         setError(err.message || "حدث خطأ - حاول مرة أخرى");
       }
@@ -145,14 +139,11 @@ export default function Login() {
           style={{ borderRadius: "18px" }}
         />
         <div className="text-center">
-          <p
-            className="text-xl font-bold text-white"
-            style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-          >
+          <p className="text-xl font-bold text-white" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
             الاتفاق
           </p>
           <p className="text-xs mt-0.5" style={{ color: "#C8A96B" }}>
-            {savedRole === "admin" || savedRole === "lawyer" ? "بوابة الإدارة والمحامي" : "بوابة العميل"}
+            {selectedPortal === "lawyer" || selectedPortal === "admin" ? "بوابة المحامي" : "بوابة العميل"}
           </p>
         </div>
       </motion.div>
@@ -237,10 +228,7 @@ export default function Login() {
               }}
             >
               <AlertCircle className="w-4 h-4 text-red-300 flex-shrink-0" />
-              <p
-                className="text-xs text-red-200"
-                style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-              >
+              <p className="text-xs text-red-200" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
                 {error}
               </p>
             </motion.div>
@@ -275,22 +263,13 @@ export default function Login() {
           style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
         >
           ما عندك حساب؟{" "}
-          <button
-            onClick={() => navigate("/register")}
-            className="underline"
-            style={{ color: "#C8A96B" }}
-          >
+          <button onClick={() => navigate("/register")} className="underline" style={{ color: "#C8A96B" }}>
             إنشاء حساب جديد
           </button>
         </p>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mt-8 text-center"
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-8 text-center">
         <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
           آمنة • دقيقة • سرية
         </p>
