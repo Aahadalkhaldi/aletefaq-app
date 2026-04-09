@@ -41,18 +41,17 @@ export default function Login() {
         return;
       }
 
-      const { data: profileRows, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("id, full_name, email, role, status, account_type")
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .single();
 
       if (profileError) {
         console.error("Profile fetch error:", profileError);
         setError("تعذر قراءة بيانات الحساب");
         return;
       }
-
-      const profile = profileRows?.[0];
 
       if (!profile) {
         setError("لم يتم العثور على الحساب");
