@@ -29,49 +29,70 @@ export default function Login() {
         email: email.trim(),
         password,
       });
+
       if (authError) throw authError;
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("status, role")
-        .eq("id", data.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        setError("لم يتم العثور على ملفك الشخصي — تواصل مع الإدارة");
+      const userId = data?.user?.id;
+      if (!userId) {
+        setError("تعذر التحقق من بيانات المستخدم");
         await supabase.auth.signOut();
         return;
       }
 
-      if (profile.status === "pending") {
-        localStorage.setItem("app_role", profile.role || role);
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("status, role, email, account_type, full_name")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        setError("لم يتم العثور على ملفك الشخصي - تواصل مع الإدارة");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      if (!profile) {
+        setError("لم يتم العثور على ملفك الشخصي - تواصل مع الإدارة");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      const resolvedRole =
+        profile.role ||
+        (profile.account_type === "lawyer" ? "lawyer" : profile.account_type === "admin" ? "admin" : role);
+
+      const resolvedStatus = profile.status || "approved";
+
+      if (resolvedStatus === "pending") {
+        localStorage.setItem("app_role", resolvedRole);
         navigate("/pending", { replace: true });
         return;
       }
 
-      if (profile.status === "rejected") {
-        setError("تم رفض حسابك — تواصل مع الإدارة للمزيد");
+      if (resolvedStatus === "rejected") {
+        setError("تم رفض حسابك - تواصل مع الإدارة للمزيد");
         await supabase.auth.signOut();
         localStorage.removeItem("app_role");
         return;
       }
 
-      const resolvedRole = profile.role || role;
       localStorage.setItem("app_role", resolvedRole);
 
-      if (resolvedRole === "lawyer") {
+      if (resolvedRole === "lawyer" || resolvedRole === "admin") {
         navigate("/lawyer-dashboard", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
       }
     } catch (err) {
       console.error("Login error:", err);
+
       if (err.message?.includes("Invalid login")) {
         setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
       } else if (err.message?.includes("Email not confirmed")) {
         setError("الرجاء تأكيد بريدك الإلكتروني أولاً");
       } else {
-        setError(err.message || "حدث خطأ — حاول مرة أخرى");
+        setError(err.message || "حدث خطأ - حاول مرة أخرى");
       }
     } finally {
       setIsLoading(false);
@@ -117,7 +138,7 @@ export default function Login() {
             الاتفاق
           </p>
           <p className="text-xs mt-0.5" style={{ color: "#C8A96B" }}>
-            {role === "lawyer" ? "بوابة المحامي" : "بوابة العميل"}
+            {role === "lawyer" || role === "admin" ? "بوابة الإدارة والمحامي" : "بوابة العميل"}
           </p>
         </div>
       </motion.div>
