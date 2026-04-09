@@ -24,6 +24,7 @@ export default function Login() {
     }
 
     setIsLoading(true);
+
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -33,29 +34,59 @@ export default function Login() {
       if (authError) throw authError;
 
       const userId = data?.user?.id;
+      const userEmail = data?.user?.email?.trim().toLowerCase();
+
       if (!userId) {
         setError("تعذر التحقق من بيانات المستخدم");
         await supabase.auth.signOut();
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("status, role, email, account_type, full_name")
+        .select("id, email, status, role, account_type, full_name")
         .eq("id", userId)
         .maybeSingle();
 
+      if ((!profile || profileError) && userEmail) {
+        const fallback = await supabase
+          .from("profiles")
+          .select("id, email, status, role, account_type, full_name")
+          .ilike("email", userEmail)
+          .maybeSingle();
+
+        profile = fallback.data;
+        profileError = fallback.error;
+      }
+
       if (profileError) {
         console.error("Profile fetch error:", profileError);
-        setError("لم يتم العثور على ملفك الشخصي - تواصل مع الإدارة");
-        await supabase.auth.signOut();
-        return;
       }
 
       if (!profile) {
-        setError("لم يتم العثور على ملفك الشخصي - تواصل مع الإدارة");
-        await supabase.auth.signOut();
-        return;
+        const insertPayload = {
+          id: userId,
+          email: userEmail,
+          full_name: data.user.user_metadata?.full_name || "User",
+          role: userEmail === "admin@aaljassim.com" ? "admin" : role,
+          status: "approved",
+          account_type: userEmail === "admin@aaljassim.com" ? "lawyer" : "client",
+        };
+
+        const created = await supabase
+          .from("profiles")
+          .upsert(insertPayload, { onConflict: "id" })
+          .select("id, email, status, role, account_type, full_name")
+          .single();
+
+        if (created.error || !created.data) {
+          console.error("Profile create error:", created.error);
+          setError("لم يتم العثور على الحساب - تواصل مع الإدارة");
+          await supabase.auth.signOut();
+          return;
+        }
+
+        profile = created.data;
       }
 
       const resolvedRole =
