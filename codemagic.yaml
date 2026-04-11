@@ -13,12 +13,17 @@ workflows:
         bundle_identifier: app.emergent.legal-counsel-qae63810fe
 
       vars:
-        VITE_BASE44_APP_ID: f8753dd9
+        VITE_BASE44_APP_ID: app.emergent.legal-counsel-qae63810fe
         VITE_BASE44_APP_BASE_URL: https://aletefaq-f8753dd9.base44.app
 
       node: 22
 
     scripts:
+      - name: Validate required environment variables
+        script: |
+          test -n "$VITE_SUPABASE_URL" || { echo "Missing VITE_SUPABASE_URL"; exit 1; }
+          test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing VITE_SUPABASE_ANON_KEY"; exit 1; }
+
       - name: Install dependencies
         script: |
           npm install --include=dev
@@ -43,8 +48,8 @@ workflows:
       - name: Set build number
         script: |
           cd ios/App
-          agvtool new-version -all 37
-          agvtool new-marketing-version 1.5.7
+          agvtool new-version -all 40
+          agvtool new-marketing-version 1.5.8
 
       - name: Build iOS
         script: |
