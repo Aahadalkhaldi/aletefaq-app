@@ -8,6 +8,9 @@ workflows:
       app_store_connect: Codemagic
 
     environment:
+      groups:
+        - app_secrets
+
       ios_signing:
         distribution_type: app_store
         bundle_identifier: app.emergent.legal-counsel-qae63810fe
