@@ -6,27 +6,41 @@ import { useAuth } from "@/lib/AuthContext";
 
 export default function Splash() {
   const navigate = useNavigate();
-  const { isAuthenticated, profile } = useAuth();
+  const { isAuthenticated, profile, isLoadingAuth } = useAuth();
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const resolvedRole = profile?.role || localStorage.getItem("app_role");
-
-      if (resolvedRole === "admin" || resolvedRole === "lawyer") {
-        navigate("/lawyer-dashboard", { replace: true });
-      } else if (resolvedRole === "client") {
-        navigate("/dashboard", { replace: true });
-      }
+    if (isLoadingAuth) {
+      return;
     }
-  }, [isAuthenticated, profile, navigate]);
+
+    if (!isAuthenticated) {
+      return;
+    }
+
+    const role = profile?.role;
+
+    if (role === "admin") {
+      navigate("/admin", { replace: true });
+      return;
+    }
+
+    if (role === "lawyer") {
+      navigate("/lawyer-dashboard", { replace: true });
+      return;
+    }
+
+    if (role === "client") {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, isLoadingAuth, profile, navigate]);
 
   const handleEnter = (role) => {
     setSelected(role);
     localStorage.setItem("app_role", role);
     setTimeout(() => {
       navigate("/login");
-    }, 400);
+    }, 300);
   };
 
   return (
@@ -90,10 +104,7 @@ export default function Splash() {
               className="absolute top-0 left-0 right-0 h-1/2 rounded-t-2xl"
               style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)" }}
             />
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "rgba(0,0,0,0.2)" }}
-            >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "rgba(0,0,0,0.2)" }}>
               <Briefcase className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 text-right relative z-10">
@@ -121,10 +132,7 @@ export default function Splash() {
               className="absolute top-0 left-0 right-0 h-1/2 rounded-t-2xl"
               style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%)" }}
             />
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-            >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
               <User className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 text-right relative z-10">
