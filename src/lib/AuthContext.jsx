@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       setIsLoadingAuth(true);
+      setAuthError(null);
 
       const {
         data: { session },
@@ -70,13 +71,11 @@ export const AuthProvider = ({ children }) => {
 
       const profileRow = data?.[0] || null;
       setProfile(profileRow);
-
-      if (profileRow?.role) {
-        localStorage.setItem("app_role", profileRow.role);
-      }
+      return profileRow;
     } catch (err) {
       console.error("Profile fetch failed:", err);
       setProfile(null);
+      return null;
     }
   };
 
@@ -109,6 +108,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         navigateToLogin,
         checkAppState,
+        refreshProfile: fetchProfile,
       }}
     >
       {children}
