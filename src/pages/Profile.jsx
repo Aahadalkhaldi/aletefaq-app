@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import GlassIcon from "../components/ui/GlassIcon";
 import { useLanguage } from "../lib/LanguageContext";
-import { base44 } from "@/api/base44Compat";
+import { useAuth } from "@/lib/AuthContext";
 
 const settingsItems = [
   { key: "notifications", label: "الإشعارات", icon: Bell, desc: "إدارة التنبيهات", path: "/notification-settings" },
@@ -20,39 +20,43 @@ const settingsItems = [
 export default function Profile() {
   const navigate = useNavigate();
   const { language, toggleLanguage } = useLanguage();
+  const { logout, profile } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("app_role");
-    base44?.auth?.logout("/");
+  const handleLogout = async () => {
+    await logout();
+    navigate("/splash", { replace: true });
   };
 
-  const handleSwitchRole = () => {
-    localStorage.removeItem("app_role");
-    navigate("/");
+  const handleSwitchRole = async () => {
+    await logout();
+    navigate("/splash", { replace: true });
   };
 
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== "احذف حسابي") return;
     setDeleting(true);
     try {
-      await base44.auth.logout("/");
+      await logout();
+      navigate("/splash", { replace: true });
     } catch {
       setDeleting(false);
     }
   };
 
+  const displayName = profile?.full_name || "المستخدم";
+  const displayEmail = profile?.email || "";
+  const displayPhone = profile?.phone || "";
+
   return (
     <div className="min-h-screen pb-8" style={{ background: "linear-gradient(160deg, #D6E8FF 0%, #EAF2FF 30%, #F3F7FD 60%, #F7F8FA 100%)" }}>
-      {/* Header */}
       <div className="px-5 pt-14 pb-4 bg-white">
         <h1 className="text-2xl font-bold" style={{ color: "#101828" }}>الملف الشخصي</h1>
       </div>
 
       <div className="px-5 pt-4 space-y-4">
-        {/* Client Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -64,24 +68,24 @@ export default function Profile() {
               className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold"
               style={{ background: "linear-gradient(135deg, #123E7C 0%, #0D2F5F 100%)", color: "white" }}
             >
-              ف
+              {displayName?.[0] || "م"}
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-bold" style={{ color: "#101828" }}>فهد الخالدي</h2>
-              <p className="text-sm" style={{ color: "#6B7280" }}>info@aletefaq.com</p>
-              <p className="text-xs mt-1" style={{ color: "#6B7280" }}>+966 5X XXX XXXX</p>
+              <h2 className="text-lg font-bold" style={{ color: "#101828" }}>{displayName}</h2>
+              <p className="text-sm" style={{ color: "#6B7280" }}>{displayEmail}</p>
+              <p className="text-xs mt-1" style={{ color: "#6B7280" }}>{displayPhone}</p>
             </div>
           </div>
 
-          {/* VIP Badge */}
           <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl" style={{ backgroundColor: "#FFF4E5" }}>
             <Star className="w-4 h-4" style={{ color: "#C8A96B" }} />
-            <p className="text-sm font-bold" style={{ color: "#8A5A00" }}>عميل VIP</p>
-            <p className="text-xs mr-auto" style={{ color: "#8A5A00" }}>أولوية الخدمة</p>
+            <p className="text-sm font-bold" style={{ color: "#8A5A00" }}>حساب نشط</p>
+            <p className="text-xs mr-auto" style={{ color: "#8A5A00" }}>
+              {profile?.role === "lawyer" || profile?.role === "admin" ? "بوابة المحامي" : "بوابة العميل"}
+            </p>
           </div>
         </motion.div>
 
-        {/* Settings List */}
         <div className="bg-white rounded-2xl shadow-card border overflow-hidden" style={{ borderColor: "#E7ECF3" }}>
           {settingsItems.map((item, i) => {
             const Icon = item.icon;
@@ -92,6 +96,7 @@ export default function Profile() {
                 navigate(item.path);
               }
             };
+
             return (
               <motion.button
                 key={item.key}
@@ -117,7 +122,6 @@ export default function Profile() {
           })}
         </div>
 
-        {/* Language Toggle */}
         <div className="bg-white rounded-2xl p-4 shadow-card border" style={{ borderColor: "#E7ECF3" }}>
           <p className="text-sm font-bold mb-3" style={{ color: "#101828" }}>اللغة</p>
           <div className="flex gap-2">
@@ -143,17 +147,15 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Switch Role */}
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={handleSwitchRole}
           className="w-full py-4 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 border"
           style={{ borderColor: "#EAF2FF", backgroundColor: "#EAF2FF", color: "#123E7C" }}
         >
-          تغيير الدور (محامي / عميل)
+          تغيير نوع الدخول
         </motion.button>
 
-        {/* Logout */}
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={handleLogout}
@@ -164,7 +166,6 @@ export default function Profile() {
           تسجيل الخروج
         </motion.button>
 
-        {/* Delete Account */}
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => setShowDeleteDialog(true)}
@@ -180,7 +181,6 @@ export default function Profile() {
         </p>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <AnimatePresence>
         {showDeleteDialog && (
           <>
@@ -188,7 +188,10 @@ export default function Profile() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-50"
               style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-              onClick={() => { setShowDeleteDialog(false); setDeleteConfirm(""); }}
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirm("");
+              }}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -212,14 +215,17 @@ export default function Profile() {
               <input
                 type="text"
                 value={deleteConfirm}
-                onChange={e => setDeleteConfirm(e.target.value)}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
                 placeholder="احذف حسابي"
                 className="w-full h-11 border rounded-xl px-3 text-sm outline-none mb-4 text-center"
                 style={{ borderColor: "#FECACA", direction: "rtl" }}
               />
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setShowDeleteDialog(false); setDeleteConfirm(""); }}
+                  onClick={() => {
+                    setShowDeleteDialog(false);
+                    setDeleteConfirm("");
+                  }}
                   className="flex-1 h-11 rounded-xl text-sm font-semibold border"
                   style={{ borderColor: "#E7ECF3", color: "#6B7280" }}
                 >
