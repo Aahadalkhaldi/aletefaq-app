@@ -9,7 +9,6 @@ import { LanguageProvider } from "@/lib/LanguageContext";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import { initPushNotifications } from "@/lib/push-notifications";
 
-// Page imports
 import Splash from "./pages/Splash";
 import Dashboard from "./pages/Dashboard";
 import Matters from "./pages/Matters";
@@ -35,7 +34,6 @@ import LawyerLayout from "./components/layout/LawyerLayout";
 import ClientReports from "./pages/ClientReports";
 import ClientHearings from "./pages/ClientHearings";
 import DocumentSigning from "./pages/DocumentSigning";
-
 import OfficeAnalytics from "./pages/OfficeAnalytics";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import MeetingScheduler from "./pages/MeetingScheduler";
@@ -62,7 +60,7 @@ import Register from "./pages/Register";
 import PendingApproval from "./pages/PendingApproval";
 import AdminPanel from "./pages/AdminPanel";
 
-const PUBLIC_PATHS = ["/", "/splash", "/login", "/register", "/pending", "/admin", "/privacy-policy", "/terms-of-service"];
+const PUBLIC_PATHS = ["/", "/splash", "/login", "/register", "/pending", "/privacy-policy", "/terms-of-service"];
 
 const FullScreenLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-white">
@@ -77,7 +75,23 @@ const FullScreenLoader = () => (
   </div>
 );
 
-const resolveRole = (profile) => profile?.role || localStorage.getItem("app_role") || null;
+const getTrustedRole = (profile) => profile?.role || null;
+
+const redirectByRole = (role) => {
+  if (role === "admin") {
+    return "/admin";
+  }
+
+  if (role === "lawyer") {
+    return "/lawyer-dashboard";
+  }
+
+  if (role === "client") {
+    return "/dashboard";
+  }
+
+  return "/splash";
+};
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, profile, isLoadingAuth, isLoadingPublicSettings } = useAuth();
@@ -98,18 +112,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const role = resolveRole(profile);
+  const role = getTrustedRole(profile);
 
   if (allowedRoles?.length && !allowedRoles.includes(role)) {
-    if (role === "lawyer" || role === "admin") {
-      return <Navigate to="/lawyer-dashboard" replace />;
-    }
-
-    if (role === "client") {
-      return <Navigate to="/dashboard" replace />;
-    }
-
-    return <Navigate to="/splash" replace />;
+    return <Navigate to={redirectByRole(role)} replace />;
   }
 
   return children;
@@ -130,17 +136,7 @@ const PublicOnlyRoute = ({ children }) => {
     return <Navigate to="/pending" replace />;
   }
 
-  const role = resolveRole(profile);
-
-  if (role === "lawyer" || role === "admin") {
-    return <Navigate to="/lawyer-dashboard" replace />;
-  }
-
-  if (role === "client") {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return children;
+  return <Navigate to={redirectByRole(getTrustedRole(profile))} replace />;
 };
 
 const PendingRoute = () => {
@@ -158,17 +154,7 @@ const PendingRoute = () => {
     return <PendingApproval />;
   }
 
-  const role = resolveRole(profile);
-
-  if (role === "lawyer" || role === "admin") {
-    return <Navigate to="/lawyer-dashboard" replace />;
-  }
-
-  if (role === "client") {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <Navigate to="/splash" replace />;
+  return <Navigate to={redirectByRole(getTrustedRole(profile))} replace />;
 };
 
 const AuthenticatedApp = () => {
@@ -219,7 +205,7 @@ const AuthenticatedApp = () => {
       <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
       <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
       <Route path="/pending" element={<PendingRoute />} />
-      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPanel /></ProtectedRoute>} />
 
       <Route element={<ProtectedRoute allowedRoles={["client"]}><AppLayout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
