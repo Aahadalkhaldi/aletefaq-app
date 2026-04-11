@@ -57,26 +57,130 @@ import LawyerSendForSignature from "./components/signature/LawyerSendForSignatur
 import CaseTracking from "./pages/CaseTracking";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import Login from './pages/Login';
-import Register from './pages/Register';
-import PendingApproval from './pages/PendingApproval';
-import AdminPanel from './pages/AdminPanel';
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import PendingApproval from "./pages/PendingApproval";
+import AdminPanel from "./pages/AdminPanel";
 
-// Pages that don't require auth
-const PUBLIC_PATHS = ['/', '/splash', '/login', '/register', '/pending', '/admin', '/privacy-policy', '/terms-of-service'];
+const PUBLIC_PATHS = ["/", "/splash", "/login", "/register", "/pending", "/admin", "/privacy-policy", "/terms-of-service"];
+
+const FullScreenLoader = () => (
+  <div className="fixed inset-0 flex items-center justify-center bg-white">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#123E7C" }}>
+        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      </div>
+      <p className="text-sm" style={{ color: "#6B7280", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+        جارٍ التحميل...
+      </p>
+    </div>
+  </div>
+);
+
+const resolveRole = (profile) => profile?.role || localStorage.getItem("app_role") || null;
+
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, profile, isLoadingAuth, isLoadingPublicSettings } = useAuth();
+
+  if (isLoadingAuth || isLoadingPublicSettings) {
+    return <FullScreenLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/splash" replace />;
+  }
+
+  if (profile?.status === "pending") {
+    return <Navigate to="/pending" replace />;
+  }
+
+  if (profile?.status === "rejected") {
+    return <Navigate to="/login" replace />;
+  }
+
+  const role = resolveRole(profile);
+
+  if (allowedRoles?.length && !allowedRoles.includes(role)) {
+    if (role === "lawyer" || role === "admin") {
+      return <Navigate to="/lawyer-dashboard" replace />;
+    }
+
+    if (role === "client") {
+      return <Navigate to="/dashboard" replace />;
+    }
+
+    return <Navigate to="/splash" replace />;
+  }
+
+  return children;
+};
+
+const PublicOnlyRoute = ({ children }) => {
+  const { isAuthenticated, profile, isLoadingAuth, isLoadingPublicSettings } = useAuth();
+
+  if (isLoadingAuth || isLoadingPublicSettings) {
+    return <FullScreenLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return children;
+  }
+
+  if (profile?.status === "pending") {
+    return <Navigate to="/pending" replace />;
+  }
+
+  const role = resolveRole(profile);
+
+  if (role === "lawyer" || role === "admin") {
+    return <Navigate to="/lawyer-dashboard" replace />;
+  }
+
+  if (role === "client") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
+const PendingRoute = () => {
+  const { isAuthenticated, profile, isLoadingAuth, isLoadingPublicSettings } = useAuth();
+
+  if (isLoadingAuth || isLoadingPublicSettings) {
+    return <FullScreenLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (profile?.status === "pending") {
+    return <PendingApproval />;
+  }
+
+  const role = resolveRole(profile);
+
+  if (role === "lawyer" || role === "admin") {
+    return <Navigate to="/lawyer-dashboard" replace />;
+  }
+
+  if (role === "client") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Navigate to="/splash" replace />;
+};
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError } = useAuth();
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
 
-  // Initialize push notifications once authenticated
   useEffect(() => {
     if (isAuthenticated) {
       initPushNotifications();
     }
   }, [isAuthenticated]);
 
-  // Safety timeout - never show loading for more than 5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoadingTimedOut(true);
@@ -87,47 +191,37 @@ const AuthenticatedApp = () => {
   const isLoading = (isLoadingPublicSettings || isLoadingAuth) && !loadingTimedOut;
 
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#123E7C" }}>
-            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          </div>
-          <p className="text-sm" style={{ color: "#6B7280", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>جارٍ التحميل...</p>
-        </div>
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
   if (authError) {
     if (authError.type === "user_not_registered") {
       return <UserNotRegisteredError />;
-    } else if (authError.type === "auth_required") {
-      // Don't auto-redirect on public pages - let Splash handle login flow
+    }
+
+    if (authError.type === "auth_required") {
       const path = window.location.pathname;
       const isPublicPath = PUBLIC_PATHS.includes(path);
       if (!isPublicPath) {
-        // For protected pages, redirect to Splash for login
         return (
           <Routes>
             <Route path="*" element={<Navigate to="/splash" replace />} />
           </Routes>
         );
       }
-      // Fall through to render public routes
     }
   }
 
   return (
     <Routes>
-      <Route path="/" element={<Splash />} />
-      <Route path="/splash" element={<Splash />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/pending" element={<PendingApproval />} />
+      <Route path="/" element={<PublicOnlyRoute><Splash /></PublicOnlyRoute>} />
+      <Route path="/splash" element={<PublicOnlyRoute><Splash /></PublicOnlyRoute>} />
+      <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+      <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
+      <Route path="/pending" element={<PendingRoute />} />
       <Route path="/admin" element={<AdminPanel />} />
-      {/* ── Client Layout ── */}
-      <Route element={<AppLayout />}>
+
+      <Route element={<ProtectedRoute allowedRoles={["client"]}><AppLayout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/matters" element={<Matters />} />
         <Route path="/vault" element={<Vault />} />
@@ -152,8 +246,7 @@ const AuthenticatedApp = () => {
         <Route path="/notifications-center" element={<NotificationCenter />} />
       </Route>
 
-      {/* ── Lawyer Layout ── */}
-      <Route element={<LawyerLayout />}>
+      <Route element={<ProtectedRoute allowedRoles={["lawyer", "admin"]}><LawyerLayout /></ProtectedRoute>}>
         <Route path="/lawyer-dashboard" element={<LawyerDashboard />} />
         <Route path="/cases" element={<Cases />} />
         <Route path="/cases/:id" element={<CaseDetail />} />
@@ -173,7 +266,8 @@ const AuthenticatedApp = () => {
         <Route path="/client-profile" element={<ClientProfile />} />
         <Route path="/signature-requests" element={<LawyerSendForSignature />} />
       </Route>
-      <Route path="/chat/:id" element={<Chat />} />
+
+      <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="*" element={<PageNotFound />} />
@@ -206,4 +300,5 @@ function App() {
   );
 }
 
+export default App;
 export default App;
