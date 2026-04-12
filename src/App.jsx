@@ -78,18 +78,9 @@ const FullScreenLoader = () => (
 const getTrustedRole = (profile) => profile?.role || null;
 
 const redirectByRole = (role) => {
-  if (role === "admin") {
-    return "/admin";
-  }
-
-  if (role === "lawyer") {
-    return "/lawyer-dashboard";
-  }
-
-  if (role === "client") {
-    return "/dashboard";
-  }
-
+  if (role === "admin") return "/admin";
+  if (role === "lawyer") return "/lawyer-dashboard";
+  if (role === "client") return "/dashboard";
   return "/splash";
 };
 
@@ -104,11 +95,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/splash" replace />;
   }
 
-  if (profile?.status === "pending") {
+  if (!profile) {
+    return <FullScreenLoader />;
+  }
+
+  if (profile.status === "pending") {
     return <Navigate to="/pending" replace />;
   }
 
-  if (profile?.status === "rejected") {
+  if (profile.status === "rejected") {
     return <Navigate to="/login" replace />;
   }
 
@@ -132,7 +127,11 @@ const PublicOnlyRoute = ({ children }) => {
     return children;
   }
 
-  if (profile?.status === "pending") {
+  if (!profile) {
+    return <FullScreenLoader />;
+  }
+
+  if (profile.status === "pending") {
     return <Navigate to="/pending" replace />;
   }
 
@@ -150,7 +149,11 @@ const PendingRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
-  if (profile?.status === "pending") {
+  if (!profile) {
+    return <FullScreenLoader />;
+  }
+
+  if (profile.status === "pending") {
     return <PendingApproval />;
   }
 
@@ -158,7 +161,7 @@ const PendingRoute = () => {
 };
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError, profile } = useAuth();
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
 
   useEffect(() => {
@@ -174,7 +177,8 @@ const AuthenticatedApp = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const isLoading = (isLoadingPublicSettings || isLoadingAuth) && !loadingTimedOut;
+  const waitingForProfile = isAuthenticated && !profile;
+  const isLoading = ((isLoadingPublicSettings || isLoadingAuth) && !loadingTimedOut) || waitingForProfile;
 
   if (isLoading) {
     return <FullScreenLoader />;
