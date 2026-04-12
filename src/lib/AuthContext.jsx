@@ -17,14 +17,25 @@ export const AuthProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        setIsAuthenticated(true);
-        await fetchProfile(session.user.id);
-      } else {
+      setIsLoadingAuth(true);
+      setAuthError(null);
+
+      try {
+        if (session?.user) {
+          setUser(session.user);
+          setIsAuthenticated(true);
+          await fetchProfile(session.user.id);
+        } else {
+          setUser(null);
+          setProfile(null);
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        console.error("Auth state change failed:", err);
         setUser(null);
         setProfile(null);
         setIsAuthenticated(false);
+      } finally {
         setIsLoadingAuth(false);
       }
     });
@@ -54,6 +65,8 @@ export const AuthProvider = ({ children }) => {
       console.error("Auth check failed:", err);
       setAuthError({ type: "auth_required", message: err.message });
       setIsAuthenticated(false);
+      setUser(null);
+      setProfile(null);
     } finally {
       setIsLoadingAuth(false);
     }
