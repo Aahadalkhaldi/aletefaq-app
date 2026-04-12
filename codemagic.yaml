@@ -1,3 +1,7 @@
+هذا **ملف `codemagic.yaml` كامل جاهز للّصق النهائي**.
+**امسح الملف كله والصق هذا كما هو:**
+
+```yaml
 workflows:
   ios-release:
     name: iOS Release
@@ -82,3 +86,12 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
+```
+
+بعد ما تحفظه:
+1. Save
+2. Commit
+3. Push
+4. Start New Build
+
+إذا ظهر خطأ، أرسل **الخطأ فقط**.
