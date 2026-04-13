@@ -96,7 +96,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (!profile) {
-    return <FullScreenLoader />;
+    return <Navigate to="/login" replace />;
   }
 
   if (profile.status === "pending") {
@@ -128,11 +128,15 @@ const PublicOnlyRoute = ({ children }) => {
   }
 
   if (!profile) {
-    return <FullScreenLoader />;
+    return <Navigate to="/login" replace />;
   }
 
   if (profile.status === "pending") {
     return <Navigate to="/pending" replace />;
+  }
+
+  if (profile.status === "rejected") {
+    return children;
   }
 
   return <Navigate to={redirectByRole(getTrustedRole(profile))} replace />;
@@ -150,11 +154,15 @@ const PendingRoute = () => {
   }
 
   if (!profile) {
-    return <FullScreenLoader />;
+    return <Navigate to="/login" replace />;
   }
 
   if (profile.status === "pending") {
     return <PendingApproval />;
+  }
+
+  if (profile.status === "rejected") {
+    return <Navigate to="/login" replace />;
   }
 
   return <Navigate to={redirectByRole(getTrustedRole(profile))} replace />;
@@ -177,7 +185,7 @@ const AuthenticatedApp = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const waitingForProfile = isAuthenticated && !profile;
+  const waitingForProfile = false;
   const isLoading = ((isLoadingPublicSettings || isLoadingAuth) && !loadingTimedOut) || waitingForProfile;
 
   if (isLoading) {
