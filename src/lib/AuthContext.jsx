@@ -8,16 +8,12 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
-  const [authError, setAuthError] = useState(null);
 
-  const clearLocalAuthState = () => {
+  const clearState = () => {
     setUser(null);
     setProfile(null);
     setIsAuthenticated(false);
     localStorage.removeItem("app_role");
-    localStorage.removeItem("base44_access_token");
-    localStorage.removeItem("token");
   };
 
   const fetchProfile = async (userId) => {
@@ -26,23 +22,22 @@ export const AuthProvider = ({ children }) => {
         .from("profiles")
         .select("*")
         .eq("id", userId)
-        .limit(1);
+        .single();
 
       if (error) throw error;
 
-      const profileRow = data?.[0] || null;
-      setProfile(profileRow);
-      return profileRow;
+      setProfile(data);
+      return data;
     } catch (err) {
-      console.error("Profile fetch failed:", err);
+      console.log("No profile found:", err);
       setProfile(null);
       return null;
     }
   };
 
-  const applySession = async (session) => {
+  const handleSession = async (session) => {
     if (!session?.user) {
-      clearLocalAuthState();
+      clearState();
       return;
     }
 
@@ -50,96 +45,44 @@ export const AuthProvider = ({ children }) => {
 
     const profileData = await fetchProfile(session.user.id);
 
-    if (profileData) {
-      setIsAuthenticated(true);
-      setAuthError(null);
+    // 🔥 أهم نقطة: لا نسمح بوجود session بدون profile
+    if (!profileData) {
+      await supabase.auth.signOut();
+      clearState();
       return;
     }
 
-    clearLocalAuthState();
-    setAuthError({
-      type: "profile_missing",
-      message: "User session exists, but no profile was found.",
-    });
-
-    try {
-      await supabase.auth.signOut();
-    } catch (signOutError) {
-      console.error("Forced sign out failed:", signOutError);
-    }
-  };
-
-  const checkAuth = async () => {
-    try {
-      setIsLoadingAuth(true);
-      setAuthError(null);
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      await applySession(session);
-    } catch (err) {
-      console.error("Auth check failed:", err);
-      clearLocalAuthState();
-      setAuthError({
-        type: "auth_required",
-        message: err?.message || "Authentication check failed.",
-      });
-    } finally {
-      setIsLoadingAuth(false);
-    }
+    setIsAuthenticated(true);
   };
 
   useEffect(() => {
-    checkAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const init = async () => {
       setIsLoadingAuth(true);
-      setAuthError(null);
 
-      try {
-        await applySession(session);
-      } catch (err) {
-        console.error("Auth state change failed:", err);
-        clearLocalAuthState();
-        setAuthError({
-          type: "auth_state_change_failed",
-          message: err?.message || "Authentication state update failed.",
-        });
-      } finally {
+      const { data } = await supabase.auth.getSession();
+      await handleSession(data.session);
+
+      setIsLoadingAuth(false);
+    };
+
+    init();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setIsLoadingAuth(true);
+        await handleSession(session);
         setIsLoadingAuth(false);
       }
-    });
+    );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const logout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error("Logout failed:", err);
-    } finally {
-      clearLocalAuthState();
-    }
-  };
-
-  const navigateToLogin = () => {
-    window.location.href = "/login";
-  };
-
-  const checkAppState = () => checkAuth();
-
-  const refreshProfile = async () => {
-    if (!user?.id) {
-      setProfile(null);
-      return null;
-    }
-
-    return await fetchProfile(user.id);
+    await supabase.auth.signOut();
+    clearState();
   };
 
   return (
@@ -149,13 +92,7 @@ export const AuthProvider = ({ children }) => {
         profile,
         isAuthenticated,
         isLoadingAuth,
-        isLoadingPublicSettings,
-        authError,
-        appPublicSettings: null,
         logout,
-        navigateToLogin,
-        checkAppState,
-        refreshProfile,
       }}
     >
       {children}
@@ -163,10 +100,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
