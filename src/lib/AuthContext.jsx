@@ -11,65 +11,13 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
 
-  useEffect(() => {
-    checkAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setIsLoadingAuth(true);
-      setAuthError(null);
-
-      try {
-        if (session?.user) {
-          setUser(session.user);
-          setIsAuthenticated(true);
-          await fetchProfile(session.user.id);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        console.error("Auth state change failed:", err);
-        setUser(null);
-        setProfile(null);
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoadingAuth(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      setIsLoadingAuth(true);
-      setAuthError(null);
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        setUser(session.user);
-        setIsAuthenticated(true);
-        await fetchProfile(session.user.id);
-      } else {
-        setUser(null);
-        setProfile(null);
-        setIsAuthenticated(false);
-      }
-    } catch (err) {
-      console.error("Auth check failed:", err);
-      setAuthError({ type: "auth_required", message: err.message });
-      setIsAuthenticated(false);
-      setUser(null);
-      setProfile(null);
-    } finally {
-      setIsLoadingAuth(false);
-    }
+  const clearLocalAuthState = () => {
+    setUser(null);
+    setProfile(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem("app_role");
+    localStorage.removeItem("base44_access_token");
+    localStorage.removeItem("token");
   };
 
   const fetchProfile = async (userId) => {
@@ -92,14 +40,91 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const applySession = async (session) => {
+    if (!session?.user) {
+      clearLocalAuthState();
+      return;
+    }
+
+    setUser(session.user);
+
+    const profileData = await fetchProfile(session.user.id);
+
+    if (profileData) {
+      setIsAuthenticated(true);
+      setAuthError(null);
+      return;
+    }
+
+    clearLocalAuthState();
+    setAuthError({
+      type: "profile_missing",
+      message: "User session exists, but no profile was found.",
+    });
+
+    try {
+      await supabase.auth.signOut();
+    } catch (signOutError) {
+      console.error("Forced sign out failed:", signOutError);
+    }
+  };
+
+  const checkAuth = async () => {
+    try {
+      setIsLoadingAuth(true);
+      setAuthError(null);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      await applySession(session);
+    } catch (err) {
+      console.error("Auth check failed:", err);
+      clearLocalAuthState();
+      setAuthError({
+        type: "auth_required",
+        message: err?.message || "Authentication check failed.",
+      });
+    } finally {
+      setIsLoadingAuth(false);
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setIsLoadingAuth(true);
+      setAuthError(null);
+
+      try {
+        await applySession(session);
+      } catch (err) {
+        console.error("Auth state change failed:", err);
+        clearLocalAuthState();
+        setAuthError({
+          type: "auth_state_change_failed",
+          message: err?.message || "Authentication state update failed.",
+        });
+      } finally {
+        setIsLoadingAuth(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem("app_role");
-    localStorage.removeItem("base44_access_token");
-    localStorage.removeItem("token");
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      clearLocalAuthState();
+    }
   };
 
   const navigateToLogin = () => {
@@ -107,6 +132,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkAppState = () => checkAuth();
+
+  const refreshProfile = async () => {
+    if (!user?.id) {
+      setProfile(null);
+      return null;
+    }
+
+    return await fetchProfile(user.id);
+  };
 
   return (
     <AuthContext.Provider
@@ -121,7 +155,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         navigateToLogin,
         checkAppState,
-        refreshProfile: fetchProfile,
+        refreshProfile,
       }}
     >
       {children}
