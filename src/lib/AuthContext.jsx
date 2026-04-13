@@ -8,6 +8,8 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingPublicSettings] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
   const clearState = () => {
     setUser(null);
@@ -29,7 +31,7 @@ export const AuthProvider = ({ children }) => {
       setProfile(data);
       return data;
     } catch (err) {
-      console.log("No profile found:", err);
+      console.log("Profile fetch failed:", err);
       setProfile(null);
       return null;
     }
@@ -38,6 +40,7 @@ export const AuthProvider = ({ children }) => {
   const handleSession = async (session) => {
     if (!session?.user) {
       clearState();
+      setAuthError({ type: "auth_required" });
       return;
     }
 
@@ -45,44 +48,74 @@ export const AuthProvider = ({ children }) => {
 
     const profileData = await fetchProfile(session.user.id);
 
-    // 🔥 أهم نقطة: لا نسمح بوجود session بدون profile
     if (!profileData) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        console.log("Sign out after missing profile failed:", signOutError);
+      }
+
       clearState();
+      setAuthError({ type: "user_not_registered" });
       return;
     }
 
     setIsAuthenticated(true);
+    setAuthError(null);
   };
 
   useEffect(() => {
+    let mounted = true;
+
     const init = async () => {
-      setIsLoadingAuth(true);
+      if (mounted) setIsLoadingAuth(true);
 
-      const { data } = await supabase.auth.getSession();
-      await handleSession(data.session);
+      try {
+        const { data, error } = await supabase.auth.getSession();
 
-      setIsLoadingAuth(false);
+        if (error) throw error;
+
+        await handleSession(data.session);
+      } catch (err) {
+        console.log("Auth init failed:", err);
+        clearState();
+        setAuthError({ type: "auth_required", message: err?.message || "Auth init failed" });
+      } finally {
+        if (mounted) setIsLoadingAuth(false);
+      }
     };
 
     init();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setIsLoadingAuth(true);
+    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (mounted) setIsLoadingAuth(true);
+
+      try {
         await handleSession(session);
-        setIsLoadingAuth(false);
+      } catch (err) {
+        console.log("Auth state change failed:", err);
+        clearState();
+        setAuthError({ type: "auth_required", message: err?.message || "Auth state change failed" });
+      } finally {
+        if (mounted) setIsLoadingAuth(false);
       }
-    );
+    });
 
     return () => {
-      listener.subscription.unsubscribe();
+      mounted = false;
+      data?.subscription?.unsubscribe?.();
     };
   }, []);
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    clearState();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.log("Logout failed:", err);
+    } finally {
+      clearState();
+      setAuthError({ type: "auth_required" });
+    }
   };
 
   return (
@@ -92,6 +125,8 @@ export const AuthProvider = ({ children }) => {
         profile,
         isAuthenticated,
         isLoadingAuth,
+        isLoadingPublicSettings,
+        authError,
         logout,
       }}
     >
