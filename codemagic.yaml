@@ -1,84 +1,45 @@
 workflows:
-  ios-release:
-    name: iOS Release
-    max_build_duration: 60
-    instance_type: mac_mini_m2
-
-    integrations:
-      app_store_connect: Codemagic
-
+  ios-workflow:
+    name: iOS Build (Capacitor)
+    
     environment:
-      groups:
-        - app_secrets
-
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: app.emergent.legal-counsel-qae63810fe
-
-      vars:
-        VITE_BASE44_APP_ID: app.emergent.legal-counsel-qae63810fe
-        VITE_BASE44_APP_BASE_URL: https://aletefaq-f8753dd9.base44.app
-
-      node: 22
+      xcode: latest
+      node: 24
+    
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
 
     scripts:
-      - name: Validate required environment variables
-        script: |
-          test -n "$VITE_SUPABASE_URL" || { echo "Missing VITE_SUPABASE_URL"; exit 1; }
-          test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing VITE_SUPABASE_ANON_KEY"; exit 1; }
-
       - name: Install dependencies
         script: |
-          npm install --include=dev
+          npm install
 
-      - name: Build web assets
+      - name: Build web app
         script: |
-          npx vite build
+          npm run build
 
-      - name: Sync Capacitor
+      - name: Sync Capacitor iOS
         script: |
-          npx @capacitor/cli sync ios
-
-      - name: Setup iOS signing
-        script: |
-          app-store-connect fetch-signing-files "app.emergent.legal-counsel-qae63810fe" \
-            --type IOS_APP_STORE \
-            --create
-          keychain initialize
-          keychain add-certificates
-          xcode-project use-profiles
+          npx cap sync ios
 
       - name: Set build number
         script: |
           cd ios/App
-         CURRENT_PROJECT_VERSION = 45
-          agvtool new-marketing-version 1.6.2
+          agvtool new-version -all 46
 
-      - name: Build iOS
+      - name: Build iOS IPA
         script: |
-          cd ios/App
-          xcodebuild -project App.xcodeproj \
-            -scheme App \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination generic/platform=iOS \
-            -archivePath build/App.xcarchive \
-            archive \
-            CODE_SIGN_STYLE=Manual
-
-      - name: Export IPA
-        script: |
-          cd ios/App
           xcode-project build-ipa \
-            --project App.xcodeproj \
+            --project ios/App/App.xcodeproj \
             --scheme App
 
     artifacts:
       - ios/App/build/ios/ipa/*.ipa
-      - ios/App/build/App.xcarchive
 
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
-        submit_to_app_store: false
