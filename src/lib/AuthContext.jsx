@@ -3,6 +3,9 @@ import { supabase } from "@/lib/supabase";
 
 const AuthContext = createContext();
 
+const PROFILE_RETRY_DELAY = 1500;
+const PROFILE_MAX_RETRIES = 3;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -18,7 +21,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("app_role");
   };
 
-  const fetchProfile = async (userId) => {
+  const fetchProfile = async (userId, retries = 0) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -32,6 +35,10 @@ export const AuthProvider = ({ children }) => {
       return data;
     } catch (err) {
       console.log("Profile fetch failed:", err);
+      if (retries < PROFILE_MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, PROFILE_RETRY_DELAY));
+        return fetchProfile(userId, retries + 1);
+      }
       setProfile(null);
       return null;
     }
@@ -49,14 +56,8 @@ export const AuthProvider = ({ children }) => {
     const profileData = await fetchProfile(session.user.id);
 
     if (!profileData) {
-      try {
-        await supabase.auth.signOut();
-      } catch (signOutError) {
-        console.log("Sign out after missing profile failed:", signOutError);
-      }
-
-      clearState();
-      setAuthError({ type: "user_not_registered" });
+      setIsAuthenticated(true);
+      setAuthError({ type: "profile_incomplete" });
       return;
     }
 
