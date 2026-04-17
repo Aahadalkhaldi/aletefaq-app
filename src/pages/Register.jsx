@@ -20,8 +20,8 @@ export default function Register() {
   const [location, setLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState("");
+  const [locationSkipped, setLocationSkipped] = useState(false);
 
-  // Request location on mount
   useEffect(() => {
     if (!navigator.geolocation) {
       setLocationError("المتصفح لا يدعم تحديد الموقع");
@@ -35,7 +35,7 @@ export default function Register() {
       },
       (err) => {
         console.error('Location error:', err);
-        setLocationError("يجب السماح بتحديد الموقع للتسجيل");
+        setLocationError("تعذّر تحديد الموقع — يمكنك المتابعة بدونه");
         setLocationLoading(false);
       },
       { enableHighAccuracy: true, timeout: 15000 }
@@ -52,7 +52,6 @@ export default function Register() {
       if (!file) return;
       if (file.size > 10 * 1024 * 1024) { setError("حجم الصورة كبير — الحد الأقصى 10 ميجابايت"); return; }
       setIdPhoto(file);
-      // Use FileReader instead of URL.createObjectURL for better Capacitor compatibility
       const reader = new FileReader();
       reader.onload = (ev) => setIdPhotoPreview(ev.target.result);
       reader.readAsDataURL(file);
@@ -73,12 +72,10 @@ export default function Register() {
     if (form.password !== form.confirmPassword) { setError("كلمة المرور غير متطابقة"); return; }
     if (form.accountType === "company" && !form.companyName.trim()) { setError("الرجاء إدخال اسم الشركة"); return; }
     if (!idPhoto) { setError("الرجاء رفع صورة الإثبات الشخصي"); return; }
-    if (!location) { setError("يجب السماح بتحديد الموقع للتسجيل"); return; }
     if (!form.agreeTerms) { setError("الرجاء الموافقة على الشروط والأحكام"); return; }
 
     setIsLoading(true);
     try {
-      // 1. Sign up — metadata goes to DB trigger which auto-creates profile
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
@@ -95,19 +92,16 @@ export default function Register() {
       const userId = authData.user?.id;
       if (!userId) throw new Error("فشل إنشاء الحساب");
 
-      // 2. Sign in to get active session
       const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
         email: form.email.trim(),
         password: form.password,
       });
       if (signInErr) {
         console.error("Auto sign-in failed:", signInErr);
-        // Profile already created by trigger, user can login manually
         navigate("/pending", { replace: true });
         return;
       }
 
-      // 3. Update profile with extra fields (trigger created basic profile)
       const updates = {
         phone: form.phone.trim(),
         registration_lat: location?.lat || null,
@@ -118,7 +112,6 @@ export default function Register() {
         updates.commercial_register = form.commercialRegister.trim();
       }
 
-      // Upload ID photo
       if (idPhoto) {
         try {
           const fileExt = idPhoto.name?.split(".").pop() || "jpg";
@@ -160,11 +153,12 @@ export default function Register() {
     fontFamily: "'IBM Plex Sans Arabic', sans-serif",
   };
 
+  const locationResolved = location || locationSkipped;
+
   return (
     <div className="min-h-screen px-6 py-12 overflow-y-auto" dir="rtl"
       style={{ background: "linear-gradient(160deg, #0D2F5F 0%, #123E7C 40%, #1E4E95 70%, #2A5FA8 100%)" }}>
 
-      {/* Back */}
       <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         onClick={() => navigate("/login")}
         className="absolute top-14 right-6 w-10 h-10 rounded-full flex items-center justify-center"
@@ -172,7 +166,6 @@ export default function Register() {
         <ArrowRight className="w-5 h-5 text-white" />
       </motion.button>
 
-      {/* Header */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center gap-3 mb-6 mt-8">
         <img src="https://media.base44.com/images/public/69c61dda06ecec47f8753dd9/38e3c9f1b_WhatsAppImage2026-03-31at90804AM.png"
@@ -185,13 +178,11 @@ export default function Register() {
         </p>
       </motion.div>
 
-      {/* Form */}
       <motion.form initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
         onSubmit={handleSubmit}
         className="w-full max-w-sm mx-auto rounded-3xl p-5 border space-y-3"
         style={{ background: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
 
-        {/* Full Name */}
         <div className="relative">
           <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10"><User className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} /></div>
           <input type="text" placeholder="الاسم الكامل" value={form.fullName}
@@ -199,7 +190,6 @@ export default function Register() {
             className="w-full rounded-xl py-2.5 pr-10 pl-4 text-sm text-white placeholder:text-white/40 outline-none" style={inputStyle} />
         </div>
 
-        {/* Email */}
         <div className="relative">
           <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10"><Mail className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} /></div>
           <input type="email" placeholder="البريد الإلكتروني" value={form.email}
@@ -207,7 +197,6 @@ export default function Register() {
             className="w-full rounded-xl py-2.5 pr-10 pl-4 text-sm text-white placeholder:text-white/40 outline-none" style={inputStyle} />
         </div>
 
-        {/* Phone */}
         <div className="relative">
           <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10"><Phone className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} /></div>
           <input type="tel" placeholder="رقم الجوال" value={form.phone}
@@ -215,7 +204,6 @@ export default function Register() {
             className="w-full rounded-xl py-2.5 pr-10 pl-4 text-sm text-white placeholder:text-white/40 outline-none" style={inputStyle} />
         </div>
 
-        {/* Password */}
         <div className="relative">
           <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10"><Lock className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} /></div>
           <input type={showPassword ? "text" : "password"} placeholder="كلمة المرور" value={form.password}
@@ -226,7 +214,6 @@ export default function Register() {
           </button>
         </div>
 
-        {/* Confirm Password */}
         <div className="relative">
           <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10"><Lock className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} /></div>
           <input type={showPassword ? "text" : "password"} placeholder="تأكيد كلمة المرور" value={form.confirmPassword}
@@ -234,7 +221,6 @@ export default function Register() {
             className="w-full rounded-xl py-2.5 pr-10 pl-4 text-sm text-white placeholder:text-white/40 outline-none" style={inputStyle} />
         </div>
 
-        {/* Account Type */}
         <div>
           <p className="text-xs text-white/60 mb-2" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>نوع الحساب</p>
           <div className="flex gap-2">
@@ -253,7 +239,6 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Company fields */}
         {form.accountType === "company" && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-3">
             <div className="relative">
@@ -271,7 +256,6 @@ export default function Register() {
           </motion.div>
         )}
 
-        {/* ID Photo Upload */}
         <div>
           <p className="text-xs text-white/60 mb-2" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>صورة الإثبات الشخصي</p>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
@@ -293,20 +277,26 @@ export default function Register() {
           )}
         </div>
 
-        {/* Terms */}
-        {/* Location Status */}
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ backgroundColor: location ? "rgba(34,197,94,0.15)" : locationError ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${location ? "rgba(34,197,94,0.3)" : locationError ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ backgroundColor: location ? "rgba(34,197,94,0.15)" : locationSkipped ? "rgba(255,255,255,0.05)" : locationError ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${location ? "rgba(34,197,94,0.3)" : locationSkipped ? "rgba(255,255,255,0.1)" : locationError ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.1)"}` }}>
           {locationLoading ? (
             <><Loader2 className="w-4 h-4 animate-spin" style={{ color: "#C8A96B" }} /><span className="text-xs" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>جاري تحديد الموقع...</span></>
           ) : location ? (
             <><MapPin className="w-4 h-4" style={{ color: "#22c55e" }} /><span className="text-xs" style={{ color: "#22c55e", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>تم تحديد الموقع بنجاح</span></>
+          ) : locationSkipped ? (
+            <><MapPin className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} /><span className="text-xs" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>تم التخطي — سيتم التسجيل بدون موقع</span></>
           ) : (
-            <><AlertCircle className="w-4 h-4" style={{ color: "#ef4444" }} /><span className="text-xs" style={{ color: "#ef4444", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>{locationError || "يجب السماح بتحديد الموقع"}</span>
-              <button type="button" onClick={() => { setLocationLoading(true); setLocationError(''); navigator.geolocation.getCurrentPosition((p) => { setLocation({lat:p.coords.latitude,lng:p.coords.longitude}); setLocationLoading(false); }, () => { setLocationError("فشل تحديد الموقع"); setLocationLoading(false); }, {enableHighAccuracy:true,timeout:15000}); }}
-                className="text-xs underline mr-auto" style={{ color: "#C8A96B" }}>إعادة المحاولة</button></>
+            <div className="flex flex-wrap items-center gap-2 w-full">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: "#fbbf24" }} />
+              <span className="text-xs flex-1" style={{ color: "#fbbf24", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>{locationError || "تعذّر تحديد الموقع"}</span>
+              <div className="flex gap-2 w-full mt-1">
+                <button type="button" onClick={() => { setLocationLoading(true); setLocationError(''); navigator.geolocation.getCurrentPosition((p) => { setLocation({lat:p.coords.latitude,lng:p.coords.longitude}); setLocationLoading(false); }, () => { setLocationError("فشل تحديد الموقع"); setLocationLoading(false); }, {enableHighAccuracy:true,timeout:15000}); }}
+                  className="text-xs underline" style={{ color: "#C8A96B" }}>إعادة المحاولة</button>
+                <button type="button" onClick={() => setLocationSkipped(true)}
+                  className="text-xs underline" style={{ color: "rgba(255,255,255,0.5)" }}>متابعة بدون موقع</button>
+              </div>
+            </div>
           )}
         </div>
-
 
         <label className="flex items-start gap-2 cursor-pointer">
           <input type="checkbox" checked={form.agreeTerms} onChange={(e) => updateForm("agreeTerms", e.target.checked)}
@@ -319,7 +309,6 @@ export default function Register() {
           </span>
         </label>
 
-        {/* Error */}
         {error && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl"
@@ -329,7 +318,6 @@ export default function Register() {
           </motion.div>
         )}
 
-        {/* Submit */}
         <motion.button whileTap={{ scale: 0.97 }} type="submit" disabled={isLoading}
           className="w-full rounded-xl py-3 text-sm font-bold text-white"
           style={{
@@ -345,7 +333,6 @@ export default function Register() {
           ) : "إنشاء حساب"}
         </motion.button>
 
-        {/* Login link */}
         <p className="text-center text-xs" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
           عندك حساب؟{" "}
           <button type="button" onClick={() => navigate("/login")} className="underline" style={{ color: "#C8A96B" }}>

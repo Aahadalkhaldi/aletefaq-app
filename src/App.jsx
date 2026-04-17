@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import { initPushNotifications } from "@/lib/push-notifications";
+import { isConfigured } from "@/lib/supabase";
 
 import Splash from "./pages/Splash";
 import Dashboard from "./pages/Dashboard";
@@ -62,7 +63,7 @@ import AdminPanel from "./pages/AdminPanel";
 
 const PUBLIC_PATHS = ["/", "/splash", "/login", "/register", "/pending", "/privacy-policy", "/terms-of-service"];
 
-const FullScreenLoader = () => (
+const FullScreenLoader = ({ showRetry, onRetry }) => (
   <div className="fixed inset-0 flex items-center justify-center bg-white">
     <div className="flex flex-col items-center gap-3">
       <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#123E7C" }}>
@@ -70,6 +71,41 @@ const FullScreenLoader = () => (
       </div>
       <p className="text-sm" style={{ color: "#6B7280", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
         جارٍ التحميل...
+      </p>
+      {showRetry && (
+        <div className="flex flex-col items-center gap-2 mt-4">
+          <p className="text-xs text-center px-8" style={{ color: "#9CA3AF", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+            التحميل يستغرق وقتًا أطول من المعتاد. تأكد من اتصالك بالإنترنت.
+          </p>
+          <button
+            onClick={onRetry}
+            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+            style={{
+              background: "linear-gradient(135deg, #C8A96B 0%, #A8893B 100%)",
+              fontFamily: "'IBM Plex Sans Arabic', sans-serif",
+            }}
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const MissingConfigScreen = () => (
+  <div className="fixed inset-0 flex items-center justify-center bg-white" dir="rtl">
+    <div className="flex flex-col items-center gap-4 px-8 text-center">
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#FEF3C7" }}>
+        <svg className="w-7 h-7" style={{ color: "#D97706" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <p className="text-base font-bold" style={{ color: "#101828", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+        التطبيق غير مهيأ
+      </p>
+      <p className="text-sm" style={{ color: "#6B7280", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+        إعدادات الاتصال بقاعدة البيانات مفقودة. تواصل مع الدعم الفني.
       </p>
     </div>
   </div>
@@ -171,6 +207,8 @@ const PendingRoute = () => {
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError, profile } = useAuth();
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  const [showRetry, setShowRetry] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -179,22 +217,45 @@ const AuthenticatedApp = () => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    setShowRetry(false);
+    const retryTimer = setTimeout(() => {
+      setShowRetry(true);
+    }, 10000);
+    const timeoutTimer = setTimeout(() => {
       setLoadingTimedOut(true);
     }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      clearTimeout(retryTimer);
+      clearTimeout(timeoutTimer);
+    };
+  }, [retryKey]);
+
+  const handleRetry = () => {
+    setLoadingTimedOut(false);
+    setShowRetry(false);
+    setRetryKey((k) => k + 1);
+    window.location.reload();
+  };
 
   const waitingForProfile = false;
   const isLoading = ((isLoadingPublicSettings || isLoadingAuth) && !loadingTimedOut) || waitingForProfile;
 
   if (isLoading) {
-    return <FullScreenLoader />;
+    return <FullScreenLoader showRetry={showRetry} onRetry={handleRetry} />;
   }
 
   if (authError) {
     if (authError.type === "user_not_registered") {
       return <UserNotRegisteredError />;
+    }
+
+    if (authError.type === "profile_incomplete") {
+      return (
+        <Routes>
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Navigate to="/register" replace />} />
+        </Routes>
+      );
     }
 
     if (authError.type === "auth_required") {
@@ -283,6 +344,10 @@ function App() {
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+
+  if (!isConfigured) {
+    return <MissingConfigScreen />;
+  }
 
   return (
     <LanguageProvider>
