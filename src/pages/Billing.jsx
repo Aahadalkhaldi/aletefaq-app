@@ -5,6 +5,20 @@ import GlassIcon from "../components/ui/GlassIcon";
 import StatusChip from "../components/ui/StatusChip";
 import { base44 } from "@/api/base44Compat";
 import { Invoice } from '@/api/entities';
+import { Capacitor } from '@capacitor/core';
+
+const APP_BASE_URL = import.meta.env.VITE_BASE44_APP_BASE_URL || "https://aletefaq-f8753dd9.base44.app";
+
+function getBillingReturnUrl() {
+  if (Capacitor.isNativePlatform()) {
+    return APP_BASE_URL + "/billing";
+  }
+  const origin = window.location.origin;
+  if (!origin || origin === "null" || origin.startsWith("capacitor://") || origin.startsWith("ionic://")) {
+    return APP_BASE_URL + "/billing";
+  }
+  return origin + "/billing";
+}
 
 const tabs = ["الكل", "قيد الاستحقاق", "مدفوعة"];
 
@@ -21,7 +35,6 @@ export default function Billing() {
       .then(data => { setInvoices(data); setLoading(false); })
       .catch(() => setLoading(false));
 
-    // Check payment return status
     const params = new URLSearchParams(window.location.search);
     if (params.get("payment") === "success") setPaymentStatus("success");
     if (params.get("payment") === "cancelled") setPaymentStatus("cancelled");
@@ -46,23 +59,27 @@ export default function Billing() {
   };
 
   const handlePay = async (inv) => {
-    // Check if running inside iframe
     if (window.self !== window.top) {
       alert("الدفع يعمل فقط من التطبيق المنشور وليس من وضع المعاينة");
       return;
     }
     setCheckoutLoading(inv.id);
     try {
+      const returnUrl = getBillingReturnUrl();
       const res = await base44.functions.invoke("createStripeCheckout", {
         invoiceId: inv.id,
         invoiceNumber: inv.invoice_number || inv.id,
         amount: inv.total_amount || inv.amount || 0,
         clientEmail: inv.client_email || "",
         description: inv.service_description || inv.case_title || "فاتورة قانونية",
-        returnUrl: window.location.origin + "/billing",
+        returnUrl,
       });
       if (res.data?.checkoutUrl) {
-        window.location.href = res.data.checkoutUrl;
+        if (Capacitor.isNativePlatform()) {
+          window.open(res.data.checkoutUrl, "_blank");
+        } else {
+          window.location.href = res.data.checkoutUrl;
+        }
       }
     } catch (e) {
       console.error(e);
@@ -77,20 +94,12 @@ export default function Billing() {
 
   return (
     <div className="min-h-screen pb-8" style={{ background: "linear-gradient(160deg, #D6E8FF 0%, #EAF2FF 30%, #F3F7FD 60%, #F7F8FA 100%)" }}>
-      {/* Balance Card */}
-      <div
-        className="px-5 pt-14 pb-6 relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #123E7C 0%, #0D2F5F 100%)" }}
-      >
-        {/* Decorative */}
+      <div className="px-5 pt-14 pb-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #123E7C 0%, #0D2F5F 100%)" }}>
         <div className="absolute -top-6 -left-6 w-28 h-28 rounded-full opacity-10" style={{ backgroundColor: "#C8A96B" }} />
-
         <p className="text-white opacity-80 text-sm relative z-10">الرصيد المستحق</p>
         <h1 className="text-white text-4xl font-bold mt-1 relative z-10">
           {loading ? "—" : `${totalDue.toLocaleString("ar-QA")} ر.ق`}
         </h1>
-
-        {/* Payment success/cancelled feedback */}
         {paymentStatus === "success" && (
           <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl relative z-10" style={{ backgroundColor: "rgba(5,150,105,0.2)", border: "1px solid rgba(5,150,105,0.4)" }}>
             <CheckCircle className="w-4 h-4 text-green-300" />
@@ -104,9 +113,7 @@ export default function Billing() {
           </div>
         )}
       </div>
-
       <div className="px-5 pt-5 space-y-4">
-        {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
           {[
             { label: "المدفوع", value: loading ? "—" : `${totalPaid.toLocaleString("ar-QA")} ر.ق`, icon: CheckCircle },
@@ -115,35 +122,26 @@ export default function Billing() {
             const Icon = stat.icon;
             return (
               <div key={stat.label} className="bg-white rounded-2xl p-4 shadow-card border" style={{ borderColor: "#E7ECF3" }}>
-                <div className="mb-2">
-                  <GlassIcon icon={Icon} index={si + 2} size="sm" />
-                </div>
+                <div className="mb-2"><GlassIcon icon={Icon} index={si + 2} size="sm" /></div>
                 <p className="text-xs" style={{ color: "#6B7280" }}>{stat.label}</p>
                 <p className="text-base font-bold mt-0.5" style={{ color: "#101828" }}>{stat.value}</p>
               </div>
             );
           })}
         </div>
-
-        {/* Tabs */}
         <div className="flex gap-2">
           {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+            <button key={tab} onClick={() => setActiveTab(tab)}
               className="px-4 py-2 rounded-full text-sm font-semibold transition-all"
               style={{
                 backgroundColor: activeTab === tab ? "#123E7C" : "white",
                 color: activeTab === tab ? "white" : "#6B7280",
                 border: `1px solid ${activeTab === tab ? "#123E7C" : "#E7ECF3"}`,
-              }}
-            >
+              }}>
               {tab}
             </button>
           ))}
         </div>
-
-        {/* Invoice List */}
         <div className="bg-white rounded-2xl shadow-card border overflow-hidden" style={{ borderColor: "#E7ECF3" }}>
           {loading ? (
             <div className="text-center py-10">
@@ -154,14 +152,8 @@ export default function Billing() {
               <p className="text-sm" style={{ color: "#6B7280" }}>لا توجد فواتير</p>
             </div>
           ) : filtered.map((inv, i) => (
-            <motion.div
-              key={inv.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.05 }}
-              className="px-4 py-4 border-b last:border-0"
-              style={{ borderColor: "#EEF2F7" }}
-            >
+            <motion.div key={inv.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
+              className="px-4 py-4 border-b last:border-0" style={{ borderColor: "#EEF2F7" }}>
               <div className="flex items-start gap-3">
                 <GlassIcon icon={CreditCard} index={4} size="sm" />
                 <div className="flex-1 min-w-0">
@@ -173,26 +165,14 @@ export default function Billing() {
                     </div>
                     <div className="text-left flex-shrink-0">
                       <p className="text-sm font-bold" style={{ color: "#0D2F5F" }}>{(inv.total_amount || inv.amount || 0).toLocaleString("ar-QA")} ر.ق</p>
-                      <div className="mt-1">
-                        <StatusChip label={statusLabel(inv.status)} variant={statusVariant(inv.status)} />
-                      </div>
+                      <div className="mt-1"><StatusChip label={statusLabel(inv.status)} variant={statusVariant(inv.status)} /></div>
                     </div>
                   </div>
-
-                  {/* Pay button for unpaid invoices */}
                   {["pending", "issued", "overdue"].includes(inv.status) && (
                     <div className="mt-3">
-                      <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => handlePay(inv)}
-                        disabled={checkoutLoading === inv.id}
+                      <motion.button whileTap={{ scale: 0.97 }} onClick={() => handlePay(inv)} disabled={checkoutLoading === inv.id}
                         className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-                        style={{
-                          background: "linear-gradient(135deg, #000000 0%, #1a1a1a 100%)",
-                          color: "white",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                        }}
-                      >
+                        style={{ background: "linear-gradient(135deg, #000000 0%, #1a1a1a 100%)", color: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
                         {checkoutLoading === inv.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
@@ -211,7 +191,6 @@ export default function Billing() {
             </motion.div>
           ))}
         </div>
-
         <p className="text-xs text-center" style={{ color: "#6B7280" }}>
           هل تحتاج إلى كشف حساب مفصل؟ تواصل مع قسم الفواتير.
         </p>
