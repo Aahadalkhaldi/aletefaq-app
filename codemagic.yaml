@@ -48,7 +48,7 @@ workflows:
       - name: Set build number
         script: |
           cd ios/App
-          agvtool new-version -all 150
+          agvtool new-version -all 200
           agvtool new-marketing-version 1.6.3
 
       - name: Build iOS
