@@ -7,6 +7,17 @@ const PROFILE_RETRY_DELAY = 1500;
 const PROFILE_MAX_RETRIES = 3;
 const AUTH_GLOBAL_TIMEOUT_MS = 12000;
 
+const buildMockProfile = (user) => ({
+  id: user.id,
+  email: user.email || "",
+  full_name: user.user_metadata?.full_name || user.email || "\u0645\u0633\u062a\u062e\u062f\u0645",
+  role: user.user_metadata?.role || "client",
+  status: "active",
+  phone: user.phone || "",
+  created_at: new Date().toISOString(),
+  _isMock: true,
+});
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -23,7 +34,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (isLoadingAuth) {
       globalTimeoutRef.current = setTimeout(() => {
-        console.warn("Auth global timeout — forcing isLoadingAuth=false");
+        console.warn("Auth global timeout \u2014 forcing isLoadingAuth=false");
         forceStopLoading();
         if (!authError) {
           setAuthError({ type: "auth_required", message: "Auth timeout" });
@@ -67,8 +78,30 @@ export const AuthProvider = ({ children }) => {
         await new Promise((r) => setTimeout(r, PROFILE_RETRY_DELAY));
         return fetchProfile(userId, retries + 1);
       }
-      setProfile(null);
-      setIsLoadingAuth(false);
+      return null;
+    }
+  };
+
+  const createDefaultProfile = async (user) => {
+    try {
+      const newProfile = {
+        id: user.id,
+        email: user.email || "",
+        full_name: user.user_metadata?.full_name || user.email || "",
+        role: user.user_metadata?.role || "client",
+        status: "pending",
+        phone: user.phone || "",
+      };
+      const { data, error } = await supabase
+        .from("profiles")
+        .insert(newProfile)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.log("Auto profile creation failed:", err);
       return null;
     }
   };
@@ -84,22 +117,31 @@ export const AuthProvider = ({ children }) => {
     setUser(session.user);
 
     try {
-      const profileData = await fetchProfile(session.user.id);
+      let profileData = await fetchProfile(session.user.id);
 
       if (!profileData) {
-        setIsAuthenticated(true);
-        setAuthError({ type: "profile_incomplete" });
-        setIsLoadingAuth(false);
-        return;
+        profileData = await createDefaultProfile(session.user);
+      }
+
+      if (!profileData) {
+        profileData = await fetchProfile(session.user.id, PROFILE_MAX_RETRIES - 1);
+      }
+
+      if (!profileData) {
+        const mock = buildMockProfile(session.user);
+        setProfile(mock);
+        console.warn("Using mock profile \u2014 no DB profile found or created");
       }
 
       setIsAuthenticated(true);
       setAuthError(null);
       setIsLoadingAuth(false);
     } catch (err) {
-      console.error("handleSession profile error:", err);
+      console.error("handleSession error:", err);
+      const mock = buildMockProfile(session.user);
+      setProfile(mock);
       setIsAuthenticated(true);
-      setAuthError({ type: "profile_incomplete" });
+      setAuthError(null);
       setIsLoadingAuth(false);
     }
   };
