@@ -70,12 +70,12 @@ const FullScreenLoader = ({ showRetry, onRetry }) => (
         <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
       </div>
       <p className="text-sm" style={{ color: "#6B7280", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
-        جارٍ التحميل...
+        \u062c\u0627\u0631\u064d \u0627\u0644\u062a\u062d\u0645\u064a\u0644...
       </p>
       {showRetry && (
         <div className="flex flex-col items-center gap-2 mt-4">
           <p className="text-xs text-center px-8" style={{ color: "#9CA3AF", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
-            التحميل يستغرق وقتًا أطول من المعتاد. تأكد من اتصالك بالإنترنت.
+            \u0627\u0644\u062a\u062d\u0645\u064a\u0644 \u064a\u0633\u062a\u063a\u0631\u0642 \u0648\u0642\u062a\u064b\u0627 \u0623\u0637\u0648\u0644 \u0645\u0646 \u0627\u0644\u0645\u0639\u062a\u0627\u062f. \u062a\u0623\u0643\u062f \u0645\u0646 \u0627\u062a\u0635\u0627\u0644\u0643 \u0628\u0627\u0644\u0625\u0646\u062a\u0631\u0646\u062a.
           </p>
           <button
             onClick={onRetry}
@@ -85,7 +85,7 @@ const FullScreenLoader = ({ showRetry, onRetry }) => (
               fontFamily: "'IBM Plex Sans Arabic', sans-serif",
             }}
           >
-            إعادة المحاولة
+            \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629
           </button>
         </div>
       )}
@@ -102,10 +102,10 @@ const MissingConfigScreen = () => (
         </svg>
       </div>
       <p className="text-base font-bold" style={{ color: "#101828", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
-        التطبيق غير مهيأ
+        \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u063a\u064a\u0631 \u0645\u0647\u064a\u0623
       </p>
       <p className="text-sm" style={{ color: "#6B7280", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
-        إعدادات الاتصال بقاعدة البيانات مفقودة. تواصل مع الدعم الفني.
+        \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0628\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0645\u0641\u0642\u0648\u062f\u0629. \u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u0641\u0646\u064a.
       </p>
     </div>
   </div>
@@ -116,8 +116,7 @@ const getTrustedRole = (profile) => profile?.role || null;
 const redirectByRole = (role) => {
   if (role === "admin") return "/admin";
   if (role === "lawyer") return "/lawyer-dashboard";
-  if (role === "client") return "/dashboard";
-  return "/splash";
+  return "/dashboard";
 };
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -129,18 +128,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/splash" replace />;
-  }
-
-  if (!profile) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (profile.status === "pending") {
-    return <Navigate to="/pending" replace />;
-  }
-
-  if (profile.status === "rejected") {
-    return <Navigate to="/login" replace />;
   }
 
   const role = getTrustedRole(profile);
@@ -163,18 +150,6 @@ const PublicOnlyRoute = ({ children }) => {
     return children;
   }
 
-  if (!profile) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (profile.status === "pending") {
-    return <Navigate to="/pending" replace />;
-  }
-
-  if (profile.status === "rejected") {
-    return children;
-  }
-
   return <Navigate to={redirectByRole(getTrustedRole(profile))} replace />;
 };
 
@@ -189,23 +164,15 @@ const PendingRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!profile) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (profile.status === "pending") {
+  if (profile?.status === "pending") {
     return <PendingApproval />;
-  }
-
-  if (profile.status === "rejected") {
-    return <Navigate to="/login" replace />;
   }
 
   return <Navigate to={redirectByRole(getTrustedRole(profile))} replace />;
 };
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError, profile } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, isAuthenticated, authError } = useAuth();
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   const [showRetry, setShowRetry] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -237,8 +204,7 @@ const AuthenticatedApp = () => {
     window.location.reload();
   };
 
-  const waitingForProfile = false;
-  const isLoading = ((isLoadingPublicSettings || isLoadingAuth) && !loadingTimedOut) || waitingForProfile;
+  const isLoading = (isLoadingPublicSettings || isLoadingAuth) && !loadingTimedOut;
 
   if (isLoading) {
     return <FullScreenLoader showRetry={showRetry} onRetry={handleRetry} />;
@@ -247,15 +213,6 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === "user_not_registered") {
       return <UserNotRegisteredError />;
-    }
-
-    if (authError.type === "profile_incomplete") {
-      return (
-        <Routes>
-          <Route path="/register" element={<Register />} />
-          <Route path="*" element={<Navigate to="/register" replace />} />
-        </Routes>
-      );
     }
 
     if (authError.type === "auth_required") {
