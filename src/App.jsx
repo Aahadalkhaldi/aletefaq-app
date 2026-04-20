@@ -57,11 +57,10 @@ import CaseTracking from "./pages/CaseTracking";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import PendingApproval from "./pages/PendingApproval";
 import AdminPanel from "./pages/AdminPanel";
 
-const PUBLIC_PATHS = ["/", "/splash", "/login", "/register", "/pending", "/privacy-policy", "/terms-of-service"];
+const PUBLIC_PATHS = ["/", "/splash", "/login", "/pending", "/privacy-policy", "/terms-of-service"];
 
 const FullScreenLoader = ({ showRetry, onRetry }) => (
   <div className="fixed inset-0 flex items-center justify-center bg-white">
@@ -252,8 +251,7 @@ const AuthenticatedApp = () => {
     if (authError.type === "profile_incomplete") {
       return (
         <Routes>
-          <Route path="/register" element={<Register />} />
-          <Route path="*" element={<Navigate to="/register" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       );
     }
@@ -276,7 +274,6 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<PublicOnlyRoute><Splash /></PublicOnlyRoute>} />
       <Route path="/splash" element={<PublicOnlyRoute><Splash /></PublicOnlyRoute>} />
       <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-      <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
       <Route path="/pending" element={<PendingRoute />} />
       <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPanel /></ProtectedRoute>} />
 

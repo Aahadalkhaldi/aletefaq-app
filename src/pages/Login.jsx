@@ -254,19 +254,6 @@ export default function Login() {
           </motion.button>
         </form>
 
-        <p
-          className="text-center text-xs mt-4"
-          style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-        >
-          ليس لديك حساب؟{" "}
-          <button
-            onClick={() => navigate("/register")}
-            className="underline"
-            style={{ color: "#C8A96B" }}
-          >
-            أنشئ حسابًا جديدًا
-          </button>
-        </p>
       </motion.div>
 
       <motion.div
