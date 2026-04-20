@@ -1,10 +1,11 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 const AuthContext = createContext();
 
 const PROFILE_RETRY_DELAY = 1500;
 const PROFILE_MAX_RETRIES = 3;
+const AUTH_GLOBAL_TIMEOUT_MS = 12000;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -13,6 +14,33 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const globalTimeoutRef = useRef(null);
+
+  const forceStopLoading = () => {
+    setIsLoadingAuth(false);
+  };
+
+  useEffect(() => {
+    if (isLoadingAuth) {
+      globalTimeoutRef.current = setTimeout(() => {
+        console.warn("Auth global timeout — forcing isLoadingAuth=false");
+        forceStopLoading();
+        if (!authError) {
+          setAuthError({ type: "auth_required", message: "Auth timeout" });
+        }
+      }, AUTH_GLOBAL_TIMEOUT_MS);
+    } else {
+      if (globalTimeoutRef.current) {
+        clearTimeout(globalTimeoutRef.current);
+        globalTimeoutRef.current = null;
+      }
+    }
+    return () => {
+      if (globalTimeoutRef.current) {
+        clearTimeout(globalTimeoutRef.current);
+      }
+    };
+  }, [isLoadingAuth]);
 
   const clearState = () => {
     setUser(null);
@@ -40,6 +68,7 @@ export const AuthProvider = ({ children }) => {
         return fetchProfile(userId, retries + 1);
       }
       setProfile(null);
+      setIsLoadingAuth(false);
       return null;
     }
   };
@@ -48,21 +77,31 @@ export const AuthProvider = ({ children }) => {
     if (!session?.user) {
       clearState();
       setAuthError({ type: "auth_required" });
+      setIsLoadingAuth(false);
       return;
     }
 
     setUser(session.user);
 
-    const profileData = await fetchProfile(session.user.id);
+    try {
+      const profileData = await fetchProfile(session.user.id);
 
-    if (!profileData) {
+      if (!profileData) {
+        setIsAuthenticated(true);
+        setAuthError({ type: "profile_incomplete" });
+        setIsLoadingAuth(false);
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setAuthError(null);
+      setIsLoadingAuth(false);
+    } catch (err) {
+      console.error("handleSession profile error:", err);
       setIsAuthenticated(true);
       setAuthError({ type: "profile_incomplete" });
-      return;
+      setIsLoadingAuth(false);
     }
-
-    setIsAuthenticated(true);
-    setAuthError(null);
   };
 
   useEffect(() => {
@@ -115,6 +154,7 @@ export const AuthProvider = ({ children }) => {
       console.log("Logout failed:", err);
     } finally {
       clearState();
+      setIsLoadingAuth(false);
       setAuthError({ type: "auth_required" });
     }
   };

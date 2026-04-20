@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, User, Phone, Building2, FileText, Camera, ArrowRight, AlertCircle, CheckCircle2, MapPin, Loader2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Phone, Building2, FileText, Camera, ArrowRight, AlertCircle, CheckCircle2, MapPin, Loader2, LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     fullName: "", email: "", phone: "+974", password: "", confirmPassword: "",
@@ -18,16 +20,20 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [location, setLocation] = useState(null);
-  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
-  const [locationSkipped, setLocationSkipped] = useState(false);
 
-  useEffect(() => {
+  const role = localStorage.getItem("app_role") || "client";
+
+  const updateForm = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+
+  const requestLocation = () => {
     if (!navigator.geolocation) {
       setLocationError("المتصفح لا يدعم تحديد الموقع");
-      setLocationLoading(false);
       return;
     }
+    setLocationLoading(true);
+    setLocationError("");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
@@ -35,16 +41,12 @@ export default function Register() {
       },
       (err) => {
         console.error('Location error:', err);
-        setLocationError("تعذّر تحديد الموقع — يمكنك المتابعة بدونه");
+        setLocationError("تعذّر تحديد الموقع — الرجاء المحاولة مرة أخرى");
         setLocationLoading(false);
       },
       { enableHighAccuracy: true, timeout: 15000 }
     );
-  }, []);
-
-  const role = localStorage.getItem("app_role") || "client";
-
-  const updateForm = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+  };
 
   const handlePhotoSelect = (e) => {
     try {
@@ -71,7 +73,8 @@ export default function Register() {
     if (form.password.length < 6) { setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل"); return; }
     if (form.password !== form.confirmPassword) { setError("كلمة المرور غير متطابقة"); return; }
     if (form.accountType === "company" && !form.companyName.trim()) { setError("الرجاء إدخال اسم الشركة"); return; }
-    if (!idPhoto) { setError("الرجاء رفع صورة الإثبات الشخصي"); return; }
+    if (!idPhoto) { setError("صورة الهوية إجبارية — الرجاء رفع صورة الإثبات الشخصي لإتمام التسجيل"); return; }
+    if (!location) { setError("تحديد الموقع إجباري — الرجاء الضغط على زر تحديد الموقع الحالي"); return; }
     if (!form.agreeTerms) { setError("الرجاء الموافقة على الشروط والأحكام"); return; }
 
     setIsLoading(true);
@@ -104,30 +107,28 @@ export default function Register() {
 
       const updates = {
         phone: form.phone.trim(),
-        registration_lat: location?.lat || null,
-        registration_lng: location?.lng || null,
+        registration_lat: location.lat,
+        registration_lng: location.lng,
       };
       if (form.accountType === "company") {
         updates.company_name = form.companyName.trim();
         updates.commercial_register = form.commercialRegister.trim();
       }
 
-      if (idPhoto) {
-        try {
-          const fileExt = idPhoto.name?.split(".").pop() || "jpg";
-          const filePath = `${userId}/id.${fileExt}`;
-          const { error: uploadError } = await supabase.storage
-            .from("id-photos")
-            .upload(filePath, idPhoto, { upsert: true });
-          if (!uploadError) {
-            const { data: urlData } = supabase.storage.from("id-photos").getPublicUrl(filePath);
-            updates.id_photo_url = urlData?.publicUrl || filePath;
-          } else {
-            console.error("Upload error:", uploadError);
-          }
-        } catch (uploadErr) {
-          console.error("Photo upload failed:", uploadErr);
+      try {
+        const fileExt = idPhoto.name?.split(".").pop() || "jpg";
+        const filePath = `${userId}/id.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("id-photos")
+          .upload(filePath, idPhoto, { upsert: true });
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from("id-photos").getPublicUrl(filePath);
+          updates.id_photo_url = urlData?.publicUrl || filePath;
+        } else {
+          console.error("Upload error:", uploadError);
         }
+      } catch (uploadErr) {
+        console.error("Photo upload failed:", uploadErr);
       }
 
       await supabase.from("profiles").update(updates).eq("id", userId);
@@ -153,18 +154,26 @@ export default function Register() {
     fontFamily: "'IBM Plex Sans Arabic', sans-serif",
   };
 
-  const locationResolved = location || locationSkipped;
-
   return (
     <div className="min-h-screen px-6 py-12 overflow-y-auto" dir="rtl"
       style={{ background: "linear-gradient(160deg, #0D2F5F 0%, #123E7C 40%, #1E4E95 70%, #2A5FA8 100%)" }}>
 
-      <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        onClick={() => navigate("/login")}
-        className="absolute top-14 right-6 w-10 h-10 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
-        <ArrowRight className="w-5 h-5 text-white" />
-      </motion.button>
+      <div className="absolute top-14 right-6 left-6 flex justify-between items-center">
+        <button
+          onClick={async () => { await logout(); navigate("/splash", { replace: true }); }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+          style={{ backgroundColor: "rgba(239,68,68,0.25)", border: "1px solid rgba(239,68,68,0.4)" }}>
+          <LogOut className="w-4 h-4 text-red-300" />
+          <span className="text-xs text-red-200" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>تسجيل الخروج</span>
+        </button>
+
+        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          onClick={() => navigate("/login")}
+          className="w-10 h-10 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+          <ArrowRight className="w-5 h-5 text-white" />
+        </motion.button>
+      </div>
 
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center gap-3 mb-6 mt-8">
@@ -257,7 +266,9 @@ export default function Register() {
         )}
 
         <div>
-          <p className="text-xs text-white/60 mb-2" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>صورة الإثبات الشخصي</p>
+          <p className="text-xs text-white/60 mb-2" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+            صورة الإثبات الشخصي <span className="text-red-400">*</span>
+          </p>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
           {idPhotoPreview ? (
             <div className="relative rounded-xl overflow-hidden border" style={{ borderColor: "#C8A96B" }}>
@@ -277,23 +288,37 @@ export default function Register() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ backgroundColor: location ? "rgba(34,197,94,0.15)" : locationSkipped ? "rgba(255,255,255,0.05)" : locationError ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${location ? "rgba(34,197,94,0.3)" : locationSkipped ? "rgba(255,255,255,0.1)" : locationError ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.1)"}` }}>
-          {locationLoading ? (
-            <><Loader2 className="w-4 h-4 animate-spin" style={{ color: "#C8A96B" }} /><span className="text-xs" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>جاري تحديد الموقع...</span></>
-          ) : location ? (
-            <><MapPin className="w-4 h-4" style={{ color: "#22c55e" }} /><span className="text-xs" style={{ color: "#22c55e", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>تم تحديد الموقع بنجاح</span></>
-          ) : locationSkipped ? (
-            <><MapPin className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} /><span className="text-xs" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>تم التخطي — سيتم التسجيل بدون موقع</span></>
+        <div>
+          <p className="text-xs text-white/60 mb-2" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+            تحديد الموقع <span className="text-red-400">*</span>
+          </p>
+          {location ? (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+              style={{ backgroundColor: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
+              <MapPin className="w-4 h-4" style={{ color: "#22c55e" }} />
+              <span className="text-xs" style={{ color: "#22c55e", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>تم تحديد الموقع بنجاح</span>
+            </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-2 w-full">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: "#fbbf24" }} />
-              <span className="text-xs flex-1" style={{ color: "#fbbf24", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>{locationError || "تعذّر تحديد الموقع"}</span>
-              <div className="flex gap-2 w-full mt-1">
-                <button type="button" onClick={() => { setLocationLoading(true); setLocationError(''); navigator.geolocation.getCurrentPosition((p) => { setLocation({lat:p.coords.latitude,lng:p.coords.longitude}); setLocationLoading(false); }, () => { setLocationError("فشل تحديد الموقع"); setLocationLoading(false); }, {enableHighAccuracy:true,timeout:15000}); }}
-                  className="text-xs underline" style={{ color: "#C8A96B" }}>إعادة المحاولة</button>
-                <button type="button" onClick={() => setLocationSkipped(true)}
-                  className="text-xs underline" style={{ color: "rgba(255,255,255,0.5)" }}>متابعة بدون موقع</button>
-              </div>
+            <div className="space-y-2">
+              <button type="button" onClick={requestLocation} disabled={locationLoading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 border transition-all"
+                style={{
+                  backgroundColor: "rgba(200,169,107,0.15)",
+                  borderColor: "#C8A96B",
+                }}>
+                {locationLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" style={{ color: "#C8A96B" }} /><span className="text-xs" style={{ color: "#C8A96B", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>جاري تحديد الموقع...</span></>
+                ) : (
+                  <><MapPin className="w-4 h-4" style={{ color: "#C8A96B" }} /><span className="text-xs font-semibold" style={{ color: "#C8A96B", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>تحديد الموقع الحالي</span></>
+                )}
+              </button>
+              {locationError && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                  style={{ backgroundColor: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: "#ef4444" }} />
+                  <span className="text-xs" style={{ color: "#fca5a5", fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>{locationError}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
