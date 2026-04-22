@@ -28,60 +28,14 @@ export default function Login() {
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
       });
 
       if (authError) throw authError;
 
-      const user = data?.user;
-      if (!user?.id) {
-        setError("تعذر التحقق من بيانات المستخدم");
-        return;
-      }
-
-      const profileResponse = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id);
-
-      if (profileResponse.error) {
-        console.error("Profile fetch error:", profileResponse.error);
-        setError("تعذر قراءة بيانات الحساب");
-        return;
-      }
-
-      const profile = profileResponse.data?.[0];
-
-      if (!profile) {
-        setError("لم يتم العثور على الحساب");
-        return;
-      }
-
-      const resolvedRole = profile.role || "client";
-      const resolvedStatus = profile.status || "pending";
-
-      if (resolvedStatus === "pending") {
-        localStorage.setItem("app_role", resolvedRole);
-        navigate("/pending", { replace: true });
-        return;
-      }
-
-      if (resolvedStatus === "rejected") {
-        setError("تم رفض الحساب - تواصل مع الإدارة");
-        await supabase.auth.signOut();
-        localStorage.removeItem("app_role");
-        return;
-      }
-
-      localStorage.setItem("app_role", resolvedRole);
-
-      if (resolvedRole === "admin" || resolvedRole === "lawyer") {
-        navigate("/lawyer-dashboard", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
+      // Success — AuthContext will detect the session and handle routing via App.jsx
     } catch (err) {
       console.error("Login error:", err);
 
