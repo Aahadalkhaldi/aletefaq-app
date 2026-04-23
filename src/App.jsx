@@ -43,7 +43,7 @@ import LawyerProfile from "./pages/LawyerProfile";
 import Parties from "./pages/Parties";
 import LawyerDashboard from "./pages/LawyerDashboard";
 import LawyerMonitoring from "./pages/LawyerMonitoring";
-import LawyerReports from "./pages/LayerReports";
+import LawyerReports from "./pages/LawyerReports";
 import ClientCasesPortal from "./pages/ClientCasesPortal";
 import NotificationCenter from "./pages/NotificationCenter";
 import LawyerNotificationManager from "./pages/LawyerNotificationManager";
