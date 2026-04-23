@@ -17,18 +17,17 @@
     --primary-deep: 216 73% 21%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 220 13% 9%;
-    --muted: 210 20% 96%;
+    --muted: 210 20% 96.1%;
     --muted-foreground: 215 10% 45%;
     --accent: 216 73% 27%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214 20% 91%;
-    --input: 214 20% 91%;
-    --ring: 216 73% 27%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 216.2 73.5% 27.1%;
     --radius: 0.75rem;
 
-    /* Custom brand colors */
     --brand-primary: #123E7C;
     --brand-deep: #0D2F5F;
     --brand-soft: #1E4E95;
@@ -54,42 +53,47 @@
     --popover-foreground: 0 0% 98%;
     --primary: 216 73% 50%;
     --primary-foreground: 0 0% 9%;
-    --secondary: 220 13% 14%;
+    --secondary: 220 13% 14.9%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 220 13% 14%;
-    --muted-foreground: 215 10% 64%;
+    --muted: 220 13% 14.9%;
+    --muted-foreground: 215 10.3% 64.9%;
     --accent: 216 73% 50%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 220 13% 18%;
     --input: 220 13% 18%;
-    --ring: 216 73% 50%;
+    --ring: 216.2 73.5% 50%;
   }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    touch-action: pan-y !important;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  html, body {
+    height: 100% !important;
+    width: 100% !important;
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important;
+    position: fixed !important;
+    overscroll-behavior-y: none !important;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
     direction: rtl;
-    overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
   }
 
   button, a, [role="tab"] {
     -webkit-tap-highlight-color: transparent;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-
-  svg {
-    user-select: none;
-    -webkit-user-select: none;
   }
 
   [dir="ltr"] {
@@ -110,7 +114,8 @@
   border-radius: 999px;
 }
 
-/* Transitions */
-* {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+#root {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }

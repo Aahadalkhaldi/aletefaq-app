@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 const AuthContext = createContext();
 
-const AUTH_TIMEOUT = 5000;
+const AUTH_TIMEOUT = 8000;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -29,40 +29,27 @@ export const AuthProvider = ({ children }) => {
     setUser(session.user);
 
     try {
-      const { data: profileData } = await supabase
+      const { data: profileData, error: fetchError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
         .maybeSingle();
 
       if (!profileData) {
-        try {
-          const { data: newProfile } = await supabase
-            .from("profiles")
-            .upsert({
-              id: session.user.id,
-              email: session.user.email,
-              full_name: session.user.user_metadata?.full_name || "مستخدم جديد",
-              role: "client",
-              status: "active",
-            })
-            .select()
-            .single();
+        const { data: newProfile, error: createError } = await supabase
+          .from("profiles")
+          .upsert({
+            id: session.user.id,
+            email: session.user.email,
+            full_name: session.user.user_metadata?.full_name || "مستخدم جديد",
+            role: "client",
+            status: "active",
+          })
+          .select()
+          .single();
 
-          setProfile(newProfile || {
-            id: session.user.id,
-            email: session.user.email,
-            role: "client",
-            status: "active",
-          });
-        } catch {
-          setProfile({
-            id: session.user.id,
-            email: session.user.email,
-            role: "client",
-            status: "active",
-          });
-        }
+        if (createError) throw createError;
+        setProfile(newProfile);
       } else {
         setProfile(profileData);
       }
@@ -70,12 +57,12 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setAuthError(null);
     } catch (err) {
-      console.error("Auth session handling error:", err);
+      console.error("Auth error, using fallback:", err);
       setProfile({
         id: session.user.id,
         email: session.user.email,
         role: "client",
-        status: "active",
+        status: "active"
       });
       setIsAuthenticated(true);
     } finally {
@@ -87,33 +74,17 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     timeoutRef.current = setTimeout(() => {
       if (isLoadingAuth) {
-        console.warn("Auth timeout reached");
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          setIsLoadingAuth(false);
-          setIsAuthenticated(!!session?.user);
-          if (session?.user) {
-            setUser(session.user);
-            if (!profile) {
-              setProfile({
-                id: session.user.id,
-                email: session.user.email,
-                role: "client",
-                status: "active",
-              });
-            }
-          }
-        }).catch(() => {
-          setIsLoadingAuth(false);
-        });
+        console.warn("Auth timeout");
+        setIsLoadingAuth(false);
       }
     }, AUTH_TIMEOUT);
 
-    const initAuth = async () => {
+    const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       await handleSession(session);
     };
 
-    initAuth();
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       await handleSession(session);
@@ -132,16 +103,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        isAuthenticated,
-        isLoadingAuth,
-        authError,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ user, profile, isAuthenticated, isLoadingAuth, authError, logout }}>
       {children}
     </AuthContext.Provider>
   );
