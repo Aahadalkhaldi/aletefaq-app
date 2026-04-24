@@ -44,7 +44,6 @@ import Parties from "./pages/Parties";
 import LawyerDashboard from "./pages/LawyerDashboard";
 import LawyerMonitoring from "./pages/LawyerMonitoring";
 import LawyerReports from "./pages/LawyerReports";
-import ClientCasesPortal from "./pages/ClientCasesPortal";
 import NotificationCenter from "./pages/NotificationCenter";
 import LawyerNotificationManager from "./pages/LawyerNotificationManager";
 import ClientProfile from "./pages/ClientProfile";
@@ -158,7 +157,7 @@ const AuthenticatedApp = () => {
 };
 
 function App() {
-  if (!isConfigured) return <div>Config Missing</div>;
+  if (!isConfigured) return <div className="flex h-screen w-screen items-center justify-center bg-gray-50 p-4 text-center"><div><h1 className="text-2xl font-bold text-gray-900 mb-2">تنبيه النظام</h1><p className="text-gray-600">إطلاق الإعدادات مفقود، يرجى مراجعة المسؤول.</p></div></div>;
   return (
     <LanguageProvider>
       <AuthProvider>
