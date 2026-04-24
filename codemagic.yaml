@@ -27,19 +27,12 @@ workflows:
       - name: Set build version
         script: |
           cd ios/App
-          agvtool new-version -all 30000
-          agvtool new-marketing-version 30.0.0
-
-      - name: Setup iOS signing
-        script: |
-          keychain initialize
-          # الجلب التلقائي للشهادات من آبل
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
+          agvtool new-version -all 35000
+          agvtool new-marketing-version 35.0.0
 
       - name: Build and Export IPA
         script: |
+          # Force automatic code signing by Codemagic
           xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
 
     artifacts:
