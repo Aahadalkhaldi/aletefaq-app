@@ -19,60 +19,33 @@ workflows:
       node: 24
 
     scripts:
-      - name: Validate required environment variables
-        script: |
-          test -n "$VITE_SUPABASE_URL" || { echo "Missing VITE_SUPABASE_URL"; exit 1; }
-          test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing VITE_SUPABASE_ANON_KEY"; exit 1; }
-
       - name: Install dependencies
-        script: |
-          npm install --include=dev
+        script: npm install --include=dev
 
       - name: Build web assets
-        script: |
-          npx vite build
+        script: npx vite build
 
       - name: Sync Capacitor
-        script: |
-          npx @capacitor/cli sync ios
+        script: npx @capacitor/cli sync ios
 
-      - name: Setup iOS signing
-        script: |
-          app-store-connect fetch-signing-files "app.emergent.legal-counsel-qae63810fe" \
-            --type IOS_APP_STORE \
-            --create
-          keychain initialize
-          keychain add-certificates
-          xcode-project use-profiles
-
-      - name: Set build number
+      - name: Set build version
         script: |
           cd ios/App
-          agvtool new-version -all 9000
-          agvtool new-marketing-version 9.0.0
+          agvtool new-version -all 15000
+          agvtool new-marketing-version 15.0.0
 
       - name: Build iOS
         script: |
           cd ios/App
-          xcodebuild -project App.xcodeproj \
-            -scheme App \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination generic/platform=iOS \
-            -archivePath build/App.xcarchive \
-            archive \
-            CODE_SIGN_STYLE=Manual
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos -archivePath build/App.xcarchive archive CODE_SIGN_STYLE=Manual
 
       - name: Export IPA
         script: |
           cd ios/App
-          xcode-project build-ipa \
-            --project App.xcodeproj \
-            --scheme App
+          xcode-project build-ipa --project App.xcodeproj --scheme App
 
     artifacts:
       - ios/App/build/ios/ipa/*.ipa
-      - ios/App/build/App.xcarchive
 
     publishing:
       app_store_connect:
