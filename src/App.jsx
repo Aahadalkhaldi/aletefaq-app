@@ -17,7 +17,7 @@ import AppLayout from "./components/layout/AppLayout.jsx";
 import LawyerLayout from "./components/layout/LawyerLayout";
 import AdminPanel from "./pages/AdminPanel";
 
-// Import existing pages to avoid white screen
+// Import all used pages to avoid reference errors
 import Matters from "./pages/Matters";
 import Cases from "./pages/Cases";
 import CaseDetail from "./pages/CaseDetail.jsx";
@@ -57,6 +57,7 @@ import LawyerSendForSignature from "./components/signature/LawyerSendForSignatur
 import CaseTracking from "./pages/CaseTracking";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import Notifications from "./pages/Notifications";
 
 const FullScreenLoader = ({ onLogout }) => (
   <div className="fixed inset-0 flex items-center justify-center bg-[#001F3F] z-[9999]">
