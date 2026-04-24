@@ -19,6 +19,11 @@ workflows:
       node: 24
 
     scripts:
+      - name: Validate required environment variables
+        script: |
+          test -n "$VITE_SUPABASE_URL" || { echo "Missing VITE_SUPABASE_URL"; exit 1; }
+          test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing VITE_SUPABASE_ANON_KEY"; exit 1; }
+
       - name: Install dependencies
         script: |
           npm install --include=dev
@@ -43,8 +48,8 @@ workflows:
       - name: Set build number
         script: |
           cd ios/App
-          agvtool new-version -all 3000
-          agvtool new-marketing-version 3.0.0
+          agvtool new-version -all 5000
+          agvtool new-marketing-version 5.0.0
 
       - name: Build iOS
         script: |
