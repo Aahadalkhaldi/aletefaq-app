@@ -11,8 +11,6 @@ workflows:
       groups:
         - app_secrets
       vars:
-        XCODE_PROJECT: "ios/App/App.xcodeproj"
-        XCODE_SCHEME: "App"
         BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
       node: 24
 
@@ -29,16 +27,17 @@ workflows:
       - name: Set build version
         script: |
           cd ios/App
-          agvtool new-version -all 20000
-          agvtool new-marketing-version 20.0.0
+          agvtool new-version -all 25000
+          agvtool new-marketing-version 25.0.0
 
-      - name: Setup iOS signing & build
+      - name: Build and Sign
         script: |
           keychain initialize
+          # This command requires App Store Connect API Key to be configured in Codemagic UI
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
           xcode-project use-profiles
-          xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
 
     artifacts:
       - build/ios/ipa/*.ipa
