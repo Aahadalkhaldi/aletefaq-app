@@ -16,6 +16,8 @@ import LawyerDashboard from "./pages/LawyerDashboard";
 import AppLayout from "./components/layout/AppLayout.jsx";
 import LawyerLayout from "./components/layout/LawyerLayout";
 import AdminPanel from "./pages/AdminPanel";
+
+// Import existing pages to avoid white screen
 import Matters from "./pages/Matters";
 import Cases from "./pages/Cases";
 import CaseDetail from "./pages/CaseDetail.jsx";
@@ -81,12 +83,37 @@ const AuthenticatedApp = () => {
       <Route path="/" element={!isAuthenticated ? <Splash /> : <Navigate to={isLawyerOrAdmin ? '/lawyer-dashboard' : '/dashboard'} replace />} />
       <Route path="/splash" element={<Splash />} />
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to={isLawyerOrAdmin ? '/lawyer-dashboard' : '/dashboard'} replace />} />
+      <Route path="/admin" element={isAuthenticated && profile?.role === 'admin' ? <AdminPanel /> : <Navigate to="/login" replace />} />
+
+      <Route element={isAuthenticated && profile?.role === 'client' ? <AppLayout /> : <Navigate to="/login" replace />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/matters" element={<Matters />} />
+        <Route path="/vault" element={<Vault />} />
+        <Route path="/billing" element={<Billing />} />
+        <Route path="/appointments" element={<Appointments />} />
+        <Route path="/ai" element={<AIAssistant />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/courts" element={<Courts />} />
+        <Route path="/courts/:id" element={<CourtDetail />} />
+        <Route path="/services" element={<ServiceRequests />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/client-reports" element={<ClientReports />} />
+        <Route path="/my-hearings" element={<ClientHearings />} />
+        <Route path="/signing" element={<DocumentSigning />} />
+        <Route path="/notification-settings" element={<NotificationSettings />} />
+        <Route path="/security-settings" element={<SecuritySettings />} />
+        <Route path="/support-settings" element={<SupportSettings />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/my-cases" element={<ClientCasesPortal />} />
+        <Route path="/case-tracking/:id" element={<CaseTracking />} />
+        <Route path="/my-vault" element={<ClientVault />} />
+        <Route path="/notifications-center" element={<NotificationCenter />} />
+      </Route>
 
       <Route element={isAuthenticated && isLawyerOrAdmin ? <LawyerLayout /> : <Navigate to="/login" replace />}>
         <Route path="/lawyer-dashboard" element={<LawyerDashboard />} />
         <Route path="/cases" element={<Cases />} />
         <Route path="/cases/:id" element={<CaseDetail />} />
-        <Route path="/notifications" element={<Notifications />} />
         <Route path="/office-analytics" element={<OfficeAnalytics />} />
         <Route path="/finance" element={<FinanceDashboard />} />
         <Route path="/meetings" element={<MeetingScheduler />} />
@@ -101,35 +128,9 @@ const AuthenticatedApp = () => {
         <Route path="/court-requests" element={<LawyerServiceRequests />} />
         <Route path="/client-profile" element={<ClientProfile />} />
         <Route path="/signature-requests" element={<LawyerSendForSignature />} />
-        <Route path="/admin" element={<AdminPanel />} />
       </Route>
 
-      <Route element={isAuthenticated && profile?.role === 'client' ? <AppLayout /> : <Navigate to="/login" replace />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/matters" element={<Matters />} />
-        <Route path="/vault" element={<Vault />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/appointments" element={<Appointments />} />
-        <Route path="/ai" element={<AIAssistant />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/courts" element={<Courts />} />
-        <Route path="/courts/:id" element={<CourtDetail />} />
-        <Route path="/services" element={<ServiceRequests />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/reports" element={<ClientReports />} />
-        <Route path="/my-hearings" element={<ClientHearings />} />
-        <Route path="/signing" element={<DocumentSigning />} />
-        <Route path="/notification-settings" element={<NotificationSettings />} />
-        <Route path="/security-settings" element={<SecuritySettings />} />
-        <Route path="/support-settings" element={<SupportSettings />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/my-cases" element={<ClientCasesPortal />} />
-        <Route path="/case-tracking/:id" element={<CaseTracking />} />
-        <Route path="/my-vault" element={<ClientVault />} />
-        <Route path="/notifications-center" element={<NotificationCenter />} />
-      </Route>
-
-      <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+      <Route path="/chat/:id" element={isAuthenticated ? <Chat /> : <Navigate to="/login" replace />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="*" element={<PageNotFound />} />
