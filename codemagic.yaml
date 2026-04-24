@@ -10,12 +10,10 @@ workflows:
     environment:
       groups:
         - app_secrets
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: app.emergent.legal-counsel-qae63810fe
       vars:
-        VITE_BASE44_APP_ID: app.emergent.legal-counsel-qae63810fe
-        VITE_BASE44_APP_BASE_URL: https://aletefaq-f8753dd9.base44.app
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+        BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
       node: 24
 
     scripts:
@@ -31,21 +29,19 @@ workflows:
       - name: Set build version
         script: |
           cd ios/App
-          agvtool new-version -all 15000
-          agvtool new-marketing-version 15.0.0
+          agvtool new-version -all 20000
+          agvtool new-marketing-version 20.0.0
 
-      - name: Build iOS
+      - name: Setup iOS signing & build
         script: |
-          cd ios/App
-          xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos -archivePath build/App.xcarchive archive CODE_SIGN_STYLE=Manual
-
-      - name: Export IPA
-        script: |
-          cd ios/App
-          xcode-project build-ipa --project App.xcodeproj --scheme App
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+          xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
 
     artifacts:
-      - ios/App/build/ios/ipa/*.ipa
+      - build/ios/ipa/*.ipa
 
     publishing:
       app_store_connect:
