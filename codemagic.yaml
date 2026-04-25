@@ -9,9 +9,18 @@ workflows:
 
     environment:
       groups:
-        - app_secrets
+        - app_store_secrets
       vars:
         BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
+        APP_STORE_CONNECT_ISSUER_ID: "2fd85088-1cc1-4b3c-9f0b-bdd07fee90d5"
+        APP_STORE_CONNECT_KEY_IDENTIFIER: "Y7882C3V9N"
+        APP_STORE_CONNECT_PRIVATE_KEY: |-
+          -----BEGIN PRIVATE KEY-----
+          MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg2pA2nU0A6ML0CgiU
+          7yzOqNw+itVezwJBu6brKvMhSz+gCgYIKoZIzj0DAQehRANCAAQ89HXPubbc6Jre
+          e7dkMBmHk3Z9sDaUnOfXoHhvfHwZTno7J+vV2UL2BpQRq2X6QYmsemcth710hqFh
+          alJ6LX+c
+          -----END PRIVATE KEY-----
       node: 24
 
     scripts:
@@ -22,7 +31,7 @@ workflows:
         script: npx vite build
 
       - name: Sync Capacitor
-        script: npx @capacitor/cli sync ios
+        script: npx capacitor sync ios
 
       - name: Set build version
         script: |
