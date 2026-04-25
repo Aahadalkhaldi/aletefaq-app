@@ -32,21 +32,22 @@ workflows:
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Set build version and identity
+      - name: Force Identity and Sign
         script: |
           cd ios/App
           agvtool new-version -all 50000
           agvtool new-marketing-version 50.0.0
+          # Update Project Identity
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
-
-      - name: Build and Sign
-        script: |
+          # Initialize Keychain
           keychain initialize
+          # Fetch Signing Files with Create Flag
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
           xcode-project use-profiles
-          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+          # Final Clean Build Command
+          xcode-project build-ipa --project "App.xcodeproj" --scheme "App"
 
     artifacts:
       - build/ios/ipa/*.ipa
