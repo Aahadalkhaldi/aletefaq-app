@@ -1,17 +1,48 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "@/lib/query-client";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./lib/AuthContext";
-import { LanguageProvider } from "./lib/LanguageContext";
+import { AuthProvider, useAuth } from "./lib/AuthContext.jsx";
+import { LanguageProvider } from "./lib/LanguageContext.jsx";
 
-import Splash from "./pages/Splash";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import LawyerDashboard from "./pages/LawyerDashboard";
+// Import Pages with Exact Paths
+import Splash from "./pages/Splash.jsx";
+import Login from "./pages/Login.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import LawyerDashboard from "./pages/LawyerDashboard.jsx";
 import AppLayout from "./components/layout/AppLayout.jsx";
-import LawyerLayout from "./components/layout/LawyerLayout";
+import LawyerLayout from "./components/layout/LawyerLayout.jsx";
+
+// simple Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-screen w-screen flex items-center justify-center bg-red-900 text-white p-10 text-center">
+          <div>
+            <h1 className="text-2xl font-bold mb-4">حدث خطأ في النظام</h1>
+            <p className="text-sm opacity-80">{this.state.error?.toString()}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-6 px-6 py-2 bg-white text-red-900 rounded-lg"
+            >
+              إعادة تحميل
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const FullScreenLoader = ({ onLogout }) => (
   <div className="fixed inset-0 flex items-center justify-center bg-[#001F3F] z-[9999]">
@@ -29,12 +60,12 @@ const AuthenticatedApp = () => {
 
   if (!isAuthenticated) return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Login />} />
     </Routes>
   );
 
-  const isLawyer = profile?.role === 'lawyer' || profile?.role === 'admin';
+  const role = profile?.role || 'client';
+  const isLawyer = role === 'lawyer' || role === 'admin';
 
   return (
     <Routes>
@@ -50,16 +81,18 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <AuthProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+          </QueryClientProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
 export default App;
