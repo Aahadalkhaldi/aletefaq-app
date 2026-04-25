@@ -11,7 +11,7 @@ workflows:
       vars:
         BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
         APP_STORE_CONNECT_ISSUER_ID: "2fd85088-1cc1-4b3c-9f0b-bdd07fee90d5"
-        # APP_STORE_CONNECT_KEY_IDENTIFIER: "تحتاج لوضعه هنا"
+        APP_STORE_CONNECT_KEY_IDENTIFIER: "9SR2A58N38"
         APP_STORE_CONNECT_PRIVATE_KEY: |-
           -----BEGIN PRIVATE KEY-----
           MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg2pA2nU0A6ML0CgiU
