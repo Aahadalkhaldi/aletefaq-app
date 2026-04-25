@@ -41,10 +41,11 @@ workflows:
       - name: Build and Sign
         script: |
           keychain initialize
+          # Simplified signing process
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
           xcode-project use-profiles
-          # Simplified build command to avoid unrecognized arguments
+          # Pure build command without risky flags
           xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
 
     artifacts:
