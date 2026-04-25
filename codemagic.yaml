@@ -31,19 +31,25 @@ workflows:
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Set build version
+      - name: Set build version and identity
         script: |
           cd ios/App
           agvtool new-version -all 50000
           agvtool new-marketing-version 50.0.0
+          # Force the Bundle ID in the project file to match the App Store
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
+          # Disable automatic signing to let Codemagic handle it
+          sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
 
       - name: Build and Sign
         script: |
           keychain initialize
+          # Fetch signing files and let Codemagic generate the certificate if missing
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
           xcode-project use-profiles
-          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+          # Explicitly set export method to app-store
+          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App" --export-method "app-store"
 
     artifacts:
       - build/ios/ipa/*.ipa
