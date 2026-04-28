@@ -32,22 +32,28 @@ workflows:
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Force Identity and Sign
+      - name: Configure Project Identity
         script: |
           cd ios/App
-          agvtool new-version -all 50000
-          agvtool new-marketing-version 50.0.0
-          # Update Project Identity
+          # Force update Bundle ID and Team ID in pbxproj
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
-          sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
-          # Initialize Keychain
+          # Disable Automatic Signing and force Manual
+          sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
+          # Inject Team ID if missing
+          if ! grep -q "DEVELOPMENT_TEAM" App.xcodeproj/project.pbxproj; then
+            sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;\n\t\t\t\tDEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
+          fi
+
+      - name: Build and Sign
+        script: |
           keychain initialize
-          # Fetch Signing Files with Create Flag
+          # Use correctly formatted fetch command
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
+          # Use profiles for the build
           xcode-project use-profiles
-          # Final Clean Build Command
-          xcode-project build-ipa --project "App.xcodeproj" --scheme "App"
+          # Simple build-ipa command that works with standard settings
+          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
 
     artifacts:
       - build/ios/ipa/*.ipa
