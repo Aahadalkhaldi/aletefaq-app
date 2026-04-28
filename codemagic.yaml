@@ -32,34 +32,27 @@ workflows:
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Prepare Identity and Certificates
+      - name: Setup Signing and Build
         script: |
-          cd ios/App
-          # Update Project Identity
-          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
-          sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
-          sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
-          
-          # Register Bundle ID in Apple Portal if missing
-          app-store-connect bundle-ids create --bundle-id "$BUNDLE_ID" --name "Aletefaq App" || true
-
-      - name: Build and Sign
-        script: |
+          # 1. Initialize Keychain
           keychain initialize
           
-          # 1. Fetch or Create Signing Files (Certificates & Profiles)
-          # We use --create to force generation if missing
+          # 2. Generate a temporary RSA key for certificate creation (The missing piece)
+          openssl genrsa -out cert_key.pem 2048
+          export CERTIFICATE_PRIVATE_KEY=$(cat cert_key.pem)
+          
+          # 3. Create Bundle ID if missing
+          app-store-connect bundle-ids create --bundle-id "$BUNDLE_ID" --name "Aletefaq App" || true
+          
+          # 4. Fetch or Create Signing Files
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           
-          # 2. Add downloaded certificates to keychain
+          # 5. Add certificates and use profiles
           keychain add-certificates
+          xcode-project use-profiles --project ios/App/App.xcodeproj
           
-          # 3. Apply profiles to Xcode project
-          # This will also generate ExportOptions.plist
-          xcode-project use-profiles --project "ios/App/App.xcodeproj"
-          
-          # 4. Build IPA using generated ExportOptions.plist
-          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+          # 6. Build IPA (Without invalid export-method flag)
+          xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
 
     artifacts:
       - build/ios/ipa/*.ipa
