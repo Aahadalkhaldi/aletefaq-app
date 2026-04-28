@@ -9,7 +9,6 @@ workflows:
 
     environment:
       vars:
-        # ملاحظة لبوسلطان: تأكد من أن هذا المعرف يطابق الموجود في App Store Connect
         BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
         TEAM_ID: "ZB2DTF72H5"
         APP_STORE_CONNECT_ISSUER_ID: "2fd85088-1cc1-4b3c-9f0b-bdd07fee90d5"
@@ -33,25 +32,34 @@ workflows:
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Configure Project Identity
+      - name: Prepare Identity and Certificates
         script: |
           cd ios/App
-          # Clean old settings
-          rm -rf build
-          # Force update Bundle ID and Team ID in all locations
+          # Update Project Identity
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
+          
+          # Register Bundle ID in Apple Portal if missing
+          app-store-connect bundle-ids create --bundle-id "$BUNDLE_ID" --name "Aletefaq App" || true
 
       - name: Build and Sign
         script: |
           keychain initialize
-          # Fetch signing files for App Store distribution
+          
+          # 1. Fetch or Create Signing Files (Certificates & Profiles)
+          # We use --create to force generation if missing
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          
+          # 2. Add downloaded certificates to keychain
           keychain add-certificates
-          xcode-project use-profiles
-          # Final robust build command for TestFlight
-          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App" --export-method "app-store"
+          
+          # 3. Apply profiles to Xcode project
+          # This will also generate ExportOptions.plist
+          xcode-project use-profiles --project "ios/App/App.xcodeproj"
+          
+          # 4. Build IPA using generated ExportOptions.plist
+          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
 
     artifacts:
       - build/ios/ipa/*.ipa
