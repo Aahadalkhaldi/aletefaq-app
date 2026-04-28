@@ -9,6 +9,7 @@ workflows:
 
     environment:
       vars:
+        # ملاحظة لبوسلطان: تأكد من أن هذا المعرف يطابق الموجود في App Store Connect
         BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
         TEAM_ID: "ZB2DTF72H5"
         APP_STORE_CONNECT_ISSUER_ID: "2fd85088-1cc1-4b3c-9f0b-bdd07fee90d5"
@@ -35,25 +36,22 @@ workflows:
       - name: Configure Project Identity
         script: |
           cd ios/App
-          # Force update Bundle ID and Team ID in pbxproj
+          # Clean old settings
+          rm -rf build
+          # Force update Bundle ID and Team ID in all locations
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
-          # Disable Automatic Signing and force Manual
+          sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
-          # Inject Team ID if missing
-          if ! grep -q "DEVELOPMENT_TEAM" App.xcodeproj/project.pbxproj; then
-            sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;\n\t\t\t\tDEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
-          fi
 
       - name: Build and Sign
         script: |
           keychain initialize
-          # Use correctly formatted fetch command
+          # Fetch signing files for App Store distribution
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
-          # Use profiles for the build
           xcode-project use-profiles
-          # Simple build-ipa command that works with standard settings
-          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+          # Final robust build command for TestFlight
+          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App" --export-method "app-store"
 
     artifacts:
       - build/ios/ipa/*.ipa
