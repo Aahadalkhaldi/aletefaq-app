@@ -9,7 +9,6 @@ workflows:
 
     environment:
       vars:
-        # The CORRECT App ID from your latest documentation
         BASE44_APP_ID: "69c61dda06ecec47f8753dd9"
         BASE44_API_KEY: "cbd0d0ccb86f475d8b3bd5acb118f50f"
         BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
@@ -36,27 +35,24 @@ workflows:
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Configure Identity and VERSION 1100
+      - name: Configure Identity and VERSION 1200
         script: |
           cd ios/App
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
-          # NEW BUILD NUMBER TO ENSURE FRESHNESS
-          agvtool new-version -all 1100
-          agvtool new-marketing-version 2.3.0
+          # INCREMENT VERSION TO 1200 (2.4.0) TO FORCE TESTFLIGHT RECOGNITION
+          agvtool new-version -all 1200
+          agvtool new-marketing-version 2.4.0
 
       - name: Build and Sign
         script: |
           keychain initialize
           openssl genrsa -out cert_key.pem 2048
           export CERTIFICATE_PRIVATE_KEY=$(cat cert_key.pem)
-          # Fetch or create certificates
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
-          # Generate ExportOptions.plist correctly
           xcode-project use-profiles --project ios/App/App.xcodeproj
-          # Standard build-ipa command (fix recognized arguments)
           xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
 
     artifacts:
