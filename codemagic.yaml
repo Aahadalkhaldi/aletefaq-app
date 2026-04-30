@@ -35,16 +35,15 @@ workflows:
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Configure Project Identity and BUMP VERSION
+      - name: Configure Project Identity and BUMP VERSION TO 1000
         script: |
           cd ios/App
-          # Update Project Identity
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
-          # BUMP VERSION to resolve Redundant Binary Upload error
-          agvtool new-version -all 900
-          agvtool new-marketing-version 2.1.0
+          # NEW BUILD NUMBER TO AVOID REDUNDANCY
+          agvtool new-version -all 1000
+          agvtool new-marketing-version 2.2.0
 
       - name: Build and Sign
         script: |
