@@ -43,8 +43,8 @@ workflows:
           sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
           # BUMP VERSION to resolve Redundant Binary Upload error
-          agvtool new-version -all 700
-          agvtool new-marketing-version 1.7.0
+          agvtool new-version -all 900
+          agvtool new-marketing-version 2.1.0
 
       - name: Build and Sign
         script: |
