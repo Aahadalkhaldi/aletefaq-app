@@ -1,7 +1,9 @@
 import { supabase } from '@/lib/supabase';
+import { base44 as realClient } from './base44Client';
 
 // Wrapper that mimics base44.auth interface using Supabase
-export const auth = {
+const auth = {
+  ...realClient.auth,
   async me() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
@@ -38,37 +40,15 @@ export const auth = {
     if (redirectTo) window.location.href = redirectTo;
   },
 
-  redirectToLogin(returnUrl) {
+  redirectToLogin() {
     window.location.href = '/login';
   },
 };
 
-// Wrapper for base44.functions — these are cloud functions that won't work without Base44
-// For now, return empty/mock responses so the app doesn't crash
-export const functions = {
-  async invoke(functionName, params) {
-    console.warn(`[functions.invoke] "${functionName}" not available — Base44 cloud functions not migrated yet`);
-    
-    // Return safe defaults based on function name
-    switch (functionName) {
-      case 'createStripeCheckout':
-      case 'createRetainerCheckout':
-        return { url: null, error: 'Payment not configured yet' };
-      case 'generateLawyerReportPDF':
-        return { url: null, error: 'PDF generation not available yet' };
-      case 'legalAssistant':
-        return { message: 'المساعد القانوني غير متوفر حالياً' };
-      case 'sendTestNotification':
-      case 'invoiceDueDateReminder':
-        return { success: false, message: 'Notifications not configured yet' };
-      default:
-        return { error: `Function "${functionName}" not available` };
-    }
-  },
-};
-
-// Combined export mimicking base44 client shape
+// Combined export merging real client with custom overrides
+// This ensures 'integrations', 'entities', and other SDK internal methods are available
 export const base44 = {
+  ...realClient,
   auth,
-  functions,
+  functions: realClient.functions,
 };
