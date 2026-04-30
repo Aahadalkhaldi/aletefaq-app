@@ -35,15 +35,15 @@ workflows:
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Configure Identity and VERSION 1200
+      - name: Configure Identity and VERSION 10.0.0 (The Ultimate Jump)
         script: |
           cd ios/App
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
-          # INCREMENT VERSION TO 1200 (2.4.0) TO FORCE TESTFLIGHT RECOGNITION
-          agvtool new-version -all 1200
-          agvtool new-marketing-version 2.4.0
+          # JUMP TO VERSION 10.0.0 (10000) TO OVERRIDE ALL PREVIOUS BUILDS
+          agvtool new-version -all 10000
+          agvtool new-marketing-version 10.0.0
 
       - name: Build and Sign
         script: |
