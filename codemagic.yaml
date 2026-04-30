@@ -9,7 +9,6 @@ workflows:
 
     environment:
       vars:
-        # The VERY REAL App ID and API Key from your latest snippet
         BASE44_APP_ID: "69c61dda06ecec47f8753dd9"
         BASE44_API_KEY: "cbd0d0ccb86f475d8b3bd5acb118f50f"
         BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
@@ -31,18 +30,21 @@ workflows:
 
       - name: Build web assets
         script: |
-          # Force injection of the absolute latest keys into the build process
           VITE_BASE44_APP_ID=$BASE44_APP_ID VITE_BASE44_API_KEY=$BASE44_API_KEY npx vite build
 
       - name: Sync Capacitor
         script: npx capacitor sync ios
 
-      - name: Configure Project Identity
+      - name: Configure Project Identity and BUMP VERSION
         script: |
           cd ios/App
+          # Update Project Identity
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
           sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
+          # BUMP VERSION to resolve Redundant Binary Upload error
+          agvtool new-version -all 700
+          agvtool new-marketing-version 1.7.0
 
       - name: Build and Sign
         script: |
