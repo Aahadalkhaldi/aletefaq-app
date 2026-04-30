@@ -8,71 +8,55 @@ workflows:
       app_store_connect: Codemagic
 
     environment:
-      groups:
-        - app_secrets
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: app.emergent.legal-counsel-qae63810fe
       vars:
-        VITE_BASE44_APP_ID: app.emergent.legal-counsel-qae63810fe
-        VITE_BASE44_APP_BASE_URL: https://aletefaq-f8753dd9.base44.app
+        # Updated App ID and API Key from the new documentation image
+        BASE44_APP_ID: "69bd2bc23e5ac7c5d18e5c61"
+        BASE44_API_KEY: "cbd0d0ccb86f475d8b3bd5acb118f50f"
+        BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
+        TEAM_ID: "ZB2DTF72H5"
+        APP_STORE_CONNECT_ISSUER_ID: "2fd85088-1cc1-4b3c-9f0b-bdd07fee90d5"
+        APP_STORE_CONNECT_KEY_IDENTIFIER: "9SR2A58N38"
+        APP_STORE_CONNECT_PRIVATE_KEY: |-
+          -----BEGIN PRIVATE KEY-----
+          MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg2pA2nU0A6ML0CgiU
+          7yzOqNw+itVezwJBu6brKvMhSz+gCgYIKoZIzj0DAQehRANCAAQ89HXPubbc6Jre
+          e7dkMBmHk3Z9sDaUnOfXoHhvfHwZTno7J+vV2UL2BpQRq2X6QYmsemcth710hqFh
+          alJ6LX+c
+          -----END PRIVATE KEY-----
       node: 24
 
     scripts:
-      - name: Validate required environment variables
-        script: |
-          test -n "$VITE_SUPABASE_URL" || { echo "Missing VITE_SUPABASE_URL"; exit 1; }
-          test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing VITE_SUPABASE_ANON_KEY"; exit 1; }
-
       - name: Install dependencies
-        script: |
-          npm install --include=dev
+        script: npm install --include=dev
 
       - name: Build web assets
         script: |
-          npx vite build
+          # Inject the REAL API Keys during build
+          VITE_BASE44_APP_ID=$BASE44_APP_ID VITE_BASE44_API_KEY=$BASE44_API_KEY npx vite build
 
       - name: Sync Capacitor
-        script: |
-          npx @capacitor/cli sync ios
+        script: npx capacitor sync ios
 
-      - name: Setup iOS signing
+      - name: Configure Project Identity
         script: |
-          app-store-connect fetch-signing-files "app.emergent.legal-counsel-qae63810fe" \
-            --type IOS_APP_STORE \
-            --create
+          cd ios/App
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = $TEAM_ID;/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g" App.xcodeproj/project.pbxproj
+
+      - name: Build and Sign
+        script: |
           keychain initialize
+          # Generate temp key to solve certificate private key issue
+          openssl genrsa -out cert_key.pem 2048
+          export CERTIFICATE_PRIVATE_KEY=$(cat cert_key.pem)
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
-          xcode-project use-profiles
-
-      - name: Set build number
-        script: |
-          cd ios/App
-          agvtool new-version -all 900
-          agvtool new-marketing-version 2.1.0
-
-      - name: Build iOS
-        script: |
-          cd ios/App
-          xcodebuild -project App.xcodeproj \
-            -scheme App \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination generic/platform=iOS \
-            -archivePath build/App.xcarchive \
-            archive \
-            CODE_SIGN_STYLE=Manual
-
-      - name: Export IPA
-        script: |
-          cd ios/App
-          xcode-project build-ipa \
-            --project App.xcodeproj \
-            --scheme App
+          xcode-project use-profiles --project ios/App/App.xcodeproj
+          xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
 
     artifacts:
-      - ios/App/build/ios/ipa/*.ipa
-      - ios/App/build/App.xcarchive
+      - build/ios/ipa/*.ipa
 
     publishing:
       app_store_connect:
