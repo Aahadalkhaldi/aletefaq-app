@@ -9,8 +9,8 @@ workflows:
 
     environment:
       vars:
-        # Updated App ID and API Key from the new documentation image
-        BASE44_APP_ID: "69bd2bc23e5ac7c5d18e5c61"
+        # The VERY REAL App ID and API Key from your latest snippet
+        BASE44_APP_ID: "69c61dda06ecec47f8753dd9"
         BASE44_API_KEY: "cbd0d0ccb86f475d8b3bd5acb118f50f"
         BUNDLE_ID: "app.emergent.legal-counsel-qae63810fe"
         TEAM_ID: "ZB2DTF72H5"
@@ -31,7 +31,7 @@ workflows:
 
       - name: Build web assets
         script: |
-          # Inject the REAL API Keys during build
+          # Force injection of the absolute latest keys into the build process
           VITE_BASE44_APP_ID=$BASE44_APP_ID VITE_BASE44_API_KEY=$BASE44_API_KEY npx vite build
 
       - name: Sync Capacitor
@@ -47,7 +47,6 @@ workflows:
       - name: Build and Sign
         script: |
           keychain initialize
-          # Generate temp key to solve certificate private key issue
           openssl genrsa -out cert_key.pem 2048
           export CERTIFICATE_PRIVATE_KEY=$(cat cert_key.pem)
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
